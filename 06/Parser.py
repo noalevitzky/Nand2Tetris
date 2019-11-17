@@ -1,3 +1,5 @@
+import os
+
 EMPTY_STRING = ""
 A_COMMAND = "A"
 C_COMMAND = "C"
@@ -8,7 +10,7 @@ JMP_INDICATOR = ';'
 DEST_INDICATOR = '='
 DEST_IDX = 0
 JMP_IDX = 1
-NULL_BINARY = "000"
+NULL_BINARY = "null"
 COMP_JMP_IDX = 0
 COMP_DEST_IDX = 1
 FIRST_CHAR = 0
@@ -17,25 +19,27 @@ FIRST_CHAR = 0
 class Parser:
     def __init__(self, file_name):
         self.f = open(file_name)
-        self.curr_command = EMPTY_STRING
+        self.curr_command = ""
 
     def hasMoreCommands(self):
-        return self.f.read() is not None
+        # check if EOF is reached
+        return self.f.tell() != os.fstat(self.f.fileno()).st_size
 
     def advance(self):
-        if self.hasMoreCommands():
-            self.curr_command = self.f.read()
+        self.curr_command = self.f.readline()
+        while self.curr_command in " \n" or (self.curr_command[0] == "/"):
+            self.curr_command = self.f.readline()
+        self.curr_command = self.curr_command.rstrip()
 
     def commandType(self):
-        if self.curr_command[FIRST_CHAR] == A_CMD_FIRST_CHAR:
+        if self.curr_command[0] == A_CMD_FIRST_CHAR:
             return A_COMMAND
-        elif self.curr_command[FIRST_CHAR] == L_CMD_FIRST_CHAR:
+        elif self.curr_command[0] == L_CMD_FIRST_CHAR:
             return L_COMMAND
         return C_COMMAND
 
-
     def symbol(self):
-        return None
+        return self.curr_command[1:]
 
     def dest(self):
         if self.has_dest():
@@ -46,8 +50,8 @@ class Parser:
     def comp(self):
         # Access the relevant comp index according to the C command structure
         if self.has_dest():
-            return self.curr_command.split(DEST_INDICATOR)[COMP_DEST_IDX]
-        return self.curr_command.split(JMP_INDICATOR)[COMP_JMP_IDX]
+            return self.curr_command.split("=")[1]
+        return self.curr_command.split(";")[0]
 
     def jump(self):
         if self.has_jump():
