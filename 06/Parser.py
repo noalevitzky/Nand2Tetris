@@ -25,11 +25,18 @@ class Parser:
         # check if EOF is reached
         return self.f.tell() != os.fstat(self.f.fileno()).st_size
 
+    def _strip(self):
+        self.curr_command = self.curr_command.rstrip()
+        i = self.curr_command.find('/')
+        if i != -1:
+            self.curr_command = self.curr_command[0:i]
+        self.curr_command = self.curr_command.strip()
+
     def advance(self):
         self.curr_command = self.f.readline()
         while self.curr_command in " \n" or (self.curr_command[0] == "/"):
             self.curr_command = self.f.readline()
-        self.curr_command = self.curr_command.rstrip()
+        self._strip()
 
     def commandType(self):
         if self.curr_command[0] == A_CMD_FIRST_CHAR:
@@ -63,3 +70,6 @@ class Parser:
 
     def has_dest(self):
         return DEST_INDICATOR in self.curr_command
+
+    def close_file(self):
+        self.f.close()
