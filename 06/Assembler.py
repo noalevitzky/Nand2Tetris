@@ -17,41 +17,41 @@ class Assembler:
         if self.parser.commandType() == A_COMMAND:
             res += "0"
             symbol = self.parser.symbol()
-            res += str(bin(int(symbol)))
+            res += "{0:015b}".format(int(symbol))
             return res
 
         elif self.parser.commandType() == C_COMMAND:
             res += "111"
-            dest = self.code.dest_to_binary(self.parser.dest())
             comp = self.code.comp_to_binary(self.parser.comp())
+            dest = self.code.dest_to_binary(self.parser.dest())
             jump = self.code.jump_to_binary(self.parser.jump())
-            res += dest
-            res += comp
-            res += jump
+            res += str(comp)
+            res += str(dest)
+            res += str(jump)
             return res
 
-        # else:
-        #     # self.parser.commandType() == L_COMMAND
-        #     res += "111"
-        #     symbol = self.parser.symbol()
-        #     res += str(bin(int(symbol)))
-        #     return res
+        else:
+            # self.parser.commandType() == L_COMMAND
+            res += "111"
+            symbol = self.parser.symbol()
+            res += "{0:015b}".format(int(symbol))
+            return res
 
 
-def main(self):
+if __name__ == "__main__":
     infile_str = sys.argv[1]
-
     # strip file name
     first_i = infile_str.rfind('/')
     last_i = infile_str.find(".asm")
-    file_name = infile_str[first_i + 1:last_i - 1]
+    file_name = infile_str[first_i + 1:last_i]
 
     assembler = Assembler(infile_str)
     name = file_name + ".hack"
     outfile = open(name, "w+")
 
-    while self.parser.hasMoreCommands():
-        self.parser.advance()
-        outfile.write(assembler.get_line())
+    while assembler.parser.hasMoreCommands():
+        assembler.parser.advance()
+        line = assembler.get_line()
+        outfile.write(line + "\n")
 
     outfile.close()
