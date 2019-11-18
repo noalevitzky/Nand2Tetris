@@ -1,0 +1,53 @@
+CHIP Mul{
+    IN a[16], b[16];
+    OUT out[16];
+
+    PARTS:
+    Mux16(a=false, b=a, sel=b[0], out=w0);
+    ShiftLeftLogical(in=a, out=s1);
+    Mux16(a=false, b=s1, sel=b[1], out=w1);
+    ShiftLeftLogical(in=s1, out=s2);
+    Mux16(a=false, b=s2, sel=b[2], out=w2);
+    ShiftLeftLogical(in=s2, out=s3);
+    Mux16(a=false, b=s3, sel=b[3], out=w3);
+    ShiftLeftLogical(in=s3, out=s4);
+    Mux16(a=false, b=s4, sel=b[4], out=w4);
+    ShiftLeftLogical(in=s4, out=s5);
+    Mux16(a=false, b=s5, sel=b[5], out=w5);
+    ShiftLeftLogical(in=s5, out=s6);
+    Mux16(a=false, b=s6, sel=b[6], out=w6);
+    ShiftLeftLogical(in=s6, out=s7);
+    Mux16(a=false, b=s7, sel=b[7], out=w7);
+    ShiftLeftLogical(in=s7, out=s8);
+    Mux16(a=false, b=s8, sel=b[8], out=w8);
+    ShiftLeftLogical(in=s8, out=s9);
+    Mux16(a=false, b=s9, sel=b[9], out=w9);
+    ShiftLeftLogical(in=s9, out=s10);
+    Mux16(a=false, b=s10, sel=b[10], out=w10);
+    ShiftLeftLogical(in=s10, out=s11);
+    Mux16(a=false, b=s11, sel=b[11], out=w11);
+    ShiftLeftLogical(in=s11, out=s12);
+    Mux16(a=false, b=s12, sel=b[12], out=w12);
+    ShiftLeftLogical(in=s12, out=s13);
+    Mux16(a=false, b=s13, sel=b[13], out=w13);
+    ShiftLeftLogical(in=s13, out=s14);
+    Mux16(a=false, b=s14, sel=b[14], out=w14);
+    ShiftLeftLogical(in=s14, out=s15);
+    Mux16(a=false, b=s15, sel=b[15], out=w15);
+
+    Add16(a=w0, b=w1, out=r1);
+    Add16(a=w2, b=w3, out=r2);
+    Add16(a=w4, b=w5, out=r3);
+    Add16(a=w6, b=w7, out=r4);
+    Add16(a=w8, b=w9, out=r5);
+    Add16(a=w10, b=w11, out=r6);
+    Add16(a=w12, b=w13, out=r7);
+    Add16(a=w14, b=w15, out=r8);
+    Add16(a=r1, b=r2, out=k1);
+    Add16(a=r3, b=r4, out=k2);
+    Add16(a=r5, b=r6, out=k3);
+    Add16(a=r7, b=r8, out=k4);
+    Add16(a=k1, b=k2, out=p1);
+    Add16(a=k3, b=k4, out=p2);
+    Add16(a=p1, b=p2, out=out);
+}
