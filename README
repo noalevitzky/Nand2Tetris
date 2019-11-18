@@ -1,0 +1,13 @@
+giladsid7,noa.levitzky
+gilad sid gilad.sid@mail.huji.ac.il 313328098, noa levitzky noa.levitzky@mail.huji.ac.il 205970783
+EX03
+
+files:
+Bit.HDL - Implementation of Bit 
+Register.HDL - Implementation of Register
+RAM8.HDL - Implementation of RAM8
+RAM64.HDL - Implementation of RAM64
+RAM512.HDL - Implementation of RAM512
+RAM4K.HDL - Implementation of RAM4K
+RAM16K.HDL - Implementation of RAM16K
+PC.HDL - Implementation of a program counter
