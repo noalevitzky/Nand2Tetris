@@ -1,13 +1,15 @@
+import sys
 import Parser
 import Code
-import sys
 
 A_COMMAND = "A"
 C_COMMAND = "C"
 L_COMMAND = "L"
-
+BIT_NUM_OUTSET = "{0:015b}"
 
 class Assembler:
+
+
     _symbols = {
         "SP": "0",
         "LCL": "1",
@@ -34,52 +36,75 @@ class Assembler:
         "KBD": "24576",
     }
 
+
     def __init__(self, infile):
         self.parser = Parser.Parser(infile)
         self.code = Code.Code()
-        self._next_free_ram = 15
+        self._next_free_ram = 16
 
     def get_line(self):
-
         res = ""
         if self.parser.commandType() == A_COMMAND:
-            res += "0"
-            symbol = self.parser.symbol()
-            if symbol.isdigit():
-                res += "{0:015b}".format(int(symbol))
-                return res
-            elif self._symbols[symbol] is not None:
-                # symbol is found in dict
-                res += "{0:015b}".format(int(self._symbols[symbol]))
-                return res
-            else:
-                # symbol is not in dict
-                self._next_free_ram += 1
-                self._symbols[symbol] = self._next_free_ram
-                return "{0:015b}".format(self._next_free_ram)
-
+            return self.process_a_cmd_line(res)
         elif self.parser.commandType() == C_COMMAND:
-            res += "111"
-            print(self.parser.comp())
-            comp = self.code.comp_to_binary(self.parser.comp())
-            dest = self.code.dest_to_binary(self.parser.dest())
-            jump = self.code.jump_to_binary(self.parser.jump())
-            res += str(comp)
-            res += str(dest)
-            res += str(jump)
-            print(res)
+            return self.process_c_cmd_line(res)
+#        else:
+#            # the line is a L command
+#            return self.process_l_cmd_line(res)
+
+    def process_a_cmd_line(self,res):
+        res += "0"
+        symbol = self.parser.symbol()
+        if symbol.isdigit():
+            res += BIT_NUM_OUTSET.format(int(symbol))
             return res
+        elif symbol in self._symbols:
+            # symbol is found in dict
+            res += BIT_NUM_OUTSET.format(int(self._symbols[symbol]))
+            return res
+        else:
+            # symbol is not in dict
+            # assign ram address to symbol, add to dict
+            #self._next_free_ram += 1
+            self._symbols[symbol] = self._next_free_ram
+            return BIT_NUM_OUTSET.format(self._next_free_ram)
+
+    def process_c_cmd_line(self, res):
+        res += "111"
+        comp = self.code.comp_to_binary(self.parser.comp())
+        dest = self.code.dest_to_binary(self.parser.dest())
+        jump = self.code.jump_to_binary(self.parser.jump())
+        res += str(comp)
+        res += str(dest)
+        res += str(jump)
+        return res
+
+
+    def process_l_cmd_line(self, res):
+        # self.parser.commandType() == L_COMMAND
+        res += "111"
+        symbol = self.parser.symbol()
+        res += BIT_NUM_OUTSET.format(int(symbol))
+        return res
+
 
     def first_pass(self):
-        row = -1
+        row = 0
         while self.parser.hasMoreCommands():
             self.parser.advance()
-            row += 1
-            if self.parser.commandType() == L_COMMAND:
-                self.set_dict(self.parser.curr_command, row + 1)
+            if self.parser.commandType() != L_COMMAND:
+                row += 1
+            else:
+                curr_l_cmd = self.parser.curr_command[1:len(self.parser.curr_command)-1]
+                self._symbols[curr_l_cmd] = row
+
+    def get_symbol(self):
+        symbol = self.parser.symbol()
+        if type(symbol) != int:
+            return self._symbols[symbol]
+        return symbol
 
     def second_pass(self):
-        print("second pass started")
         while self.parser.hasMoreCommands():
             self.parser.advance()
             while self.parser.commandType() == L_COMMAND:
@@ -87,7 +112,7 @@ class Assembler:
             line = self.get_line()
             outfile.write(line + "\n")
 
-    def set_dict(self, symbol, val):
+    def set_dict(self, symbol, val, cmd_type):
         self._symbols[symbol] = val
 
     def get_dict(self, symbol):
@@ -112,6 +137,11 @@ if __name__ == "__main__":
     assembler = Assembler(infile_str)
     name = file_name + ".hack"
     outfile = open(name, "w+")
+
+#    while assembler.parser.hasMoreCommands():
+#        assembler.parser.advance()
+#        line = assembler.get_line()
+#        outfile.write(line + "\n")
 
     assembler.second_pass()
     assembler.parser.close_file()
