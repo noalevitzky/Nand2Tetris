@@ -1,4 +1,6 @@
+# class for decoding compute commands
 class Code:
+
     _d_comp = {
         "0": "0101010",
         "1": "0111111",
