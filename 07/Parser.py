@@ -1,13 +1,13 @@
 import os
 
-C_ARITHMETIC = "C_ARITHMETIC",
-C_PUSH = "C_PUSH",
-C_POP = "C_POP",
-C_LABEL = "C_LABEL",
-C_GOTO = "C_GOTO",
-C_IF = "C_IF",
-C_FUNCTION = "C_FUNCTION",
-C_RETURN = "C_RETURN",
+C_ARITHMETIC = "C_ARITHMETIC"
+C_PUSH = "C_PUSH"
+C_POP = "C_POP"
+C_LABEL = "C_LABEL"
+C_GOTO = "C_GOTO"
+C_IF = "C_IF"
+C_FUNCTION = "C_FUNCTION"
+C_RETURN = "C_RETURN"
 C_CALL = "C_CALL"
 COMMENT_INDICATOR = '/'
 
@@ -83,11 +83,12 @@ class Parser:
         """
         command = self._cur_command.split()[0]
 
-        if self._command_dict[command] == C_RETURN:
+        if self._command_dict[command] == "C_RETURN":
             return None
-        elif self._command_dict[command] == C_ARITHMETIC:
+        elif self._command_dict[command] == "C_ARITHMETIC":
             return command
         else:
+
             return self._cur_command.split()[1]
 
     def arg2(self):
