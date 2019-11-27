@@ -1,12 +1,19 @@
 CONST = "constant"
 PUSH_CMD = "C_PUSH"
 TMP = "temp"
+
+
 class CodeWriter:
 
     #todo Check what's the ram address for the static segment
-    __register_seg_dict__ = {"argument":2, "local":1, "this":3, "that":4, "temp":5}
-
-
+    __register_seg_dict__ = {
+        "argument": 2,
+        "local": 1,
+        "this": 3,
+        "that": 4,
+        "temp": 5,
+        "pointer": 3
+    }
 
     def __init__(self, out_file):
         """
@@ -137,7 +144,7 @@ class CodeWriter:
         self.out_file.write("@SP" + "\n")
         self.out_file.write("M=M-1" + "\n")
         self.out_file.write("A=M" + "\n")
-        self.out_file.write("D=M&D" + "\n")
+        self.out_file.write("M=M&D" + "\n")
         self.out_file.write("@SP" + "\n")
         self.out_file.write("M=M+1" + "\n")
 
@@ -146,7 +153,7 @@ class CodeWriter:
         self.out_file.write("@SP" + "\n")
         self.out_file.write("M=M-1" + "\n")
         self.out_file.write("A=M" + "\n")
-        self.out_file.write("D=M|D" + "\n")
+        self.out_file.write("M=M|D" + "\n")
         self.out_file.write("@SP" + "\n")
         self.out_file.write("M=M+1" + "\n")
 
@@ -188,20 +195,30 @@ class CodeWriter:
         else:
             self.write_pop_cmd(segment, index)
 
-
     def write_push_cmd(self, segment, index):
         """
         Writes a fully push command
         :param segment: The segment of the given push command
         :param index: The index of the given push command
         """
-        ram_address = self.get_symbol(segment, index)
-        # writes @ram_address
-        self.out_file.write("@" + str(ram_address)+"\n")
         if segment == CONST:
+            self.out_file.write("@" + str(index) + "\n")
             self.out_file.write("D=A"+"\n")
+            
         else:
-            self.out_file.write("D=M"+"\n")
+            # copy src content to D
+            address = self.__register_seg_dict__[segment]
+            self.out_file.write("@" + str(address) + "\n")
+            self.out_file.write("D=M" + "\n")
+            self.out_file.write("@13" + "\n")
+            self.out_file.write("M=D" + "\n")
+            self.out_file.write("@" + str(index) + "\n")
+            self.out_file.write("D=A" + "\n")
+            self.out_file.write("@13" + "\n")
+            self.out_file.write("A=M+D" + "\n")
+            self.out_file.write("D=M" + "\n")
+
+        # push D content to stack
         self.out_file.write("@SP"+"\n")
         self.out_file.write("A=M"+"\n")
         self.out_file.write("M=D"+"\n")
@@ -214,14 +231,24 @@ class CodeWriter:
         :param segment: The segment of the given pop command
         :param index: The index of the given pop command
         """
+        # calc dest
+        self.out_file.write("@" + str(self.__register_seg_dict__[segment]) + "\n")
+        self.out_file.write("D=M"+"\n")
+        self.out_file.write("@13"+"\n")
+        self.out_file.write("M=D"+"\n")
+        self.out_file.write("@"+ str(index) +"\n")
+        self.out_file.write("D=A"+"\n")
+        self.out_file.write("@13" + "\n")
+        self.out_file.write("M=M+D" + "\n")
+
+        # pop object to dest
         self.out_file.write("@SP"+"\n")
         self.out_file.write("M=M-1"+"\n")
         self.out_file.write("A=M"+"\n")
         self.out_file.write("D=M"+"\n")
-        ram_address = self.get_symbol(segment, index)
-        self.out_file.write("@" + str(ram_address)+"\n")
-        self.out_file.write("M=D"+"\n")
-
+        self.out_file.write("@13" + "\n")
+        self.out_file.write("A=M" + "\n")
+        self.out_file.write("M=D" + "\n")
 
     def get_symbol(self, segment, index):
         """
@@ -233,11 +260,12 @@ class CodeWriter:
         """
         if isinstance(segment, int):
             return segment
-        if segment == CONST:
-            return index
+        # if segment == CONST:
+        #     return index
         # get the predefined base register of the given segment
         base_address = CodeWriter.__register_seg_dict__[segment]
-        return str(int(base_address) + int(index))
+        # return str(int(base_address) + int(index))
+        return str(int(base_address))
 
 
     def close(self):
