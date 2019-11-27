@@ -303,4 +303,9 @@ class CodeWriter:
         """
         closes the CodeWriter's output file
         """
+        self.out_file.write("@END" + "\n")
+        self.out_file.write("0;JMP" + "\n\n")
+        self.out_file.write("(END)" + "\n")
+        self.out_file.write("@END" + "\n")
+        self.out_file.write("0;JMP" + "\n\n")
         self.out_file.close()
