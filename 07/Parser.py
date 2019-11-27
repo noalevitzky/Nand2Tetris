@@ -83,9 +83,9 @@ class Parser:
         """
         command = self._cur_command.split()[0]
 
-        if self._command_dict[command] == "C_RETURN":
+        if self._command_dict[command] == C_RETURN:
             return None
-        elif self._command_dict[command] == "C_ARITHMETIC":
+        elif self._command_dict[command] == C_ARITHMETIC:
             return command
         else:
 
