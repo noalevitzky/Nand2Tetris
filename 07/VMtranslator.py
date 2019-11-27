@@ -30,7 +30,6 @@ def write_file(file_str, cw):
             cw.write_arithmetic(command)
 
 
-
 if __name__ == '__main__':
     """
     translates VM file / directory to asm file
