@@ -3,8 +3,12 @@ import CodeWriter
 from pathlib import Path
 import sys
 
-# _____________ VMtranslator Program _____________ #
+C_ARITHMETIC = "C_ARITHMETIC"
+C_PUSH = "C_PUSH"
+C_POP = "C_POP"
 
+
+# _____________ VMtranslator Program _____________ #
 
 def write_file(file_str, cw):
     """
@@ -19,12 +23,13 @@ def write_file(file_str, cw):
         parser.advance()
         c_type = parser.command_type()
 
-        if c_type == "C_PUSH" or c_type == "C_POP":
+        if c_type == C_PUSH or c_type == C_POP:
             # write push / pop command
             segment = parser.arg1()
             index = parser.arg2()
             cw.write_push_pop(c_type, segment, index)
-        elif c_type == "C_ARITHMETIC":
+
+        elif c_type == C_ARITHMETIC:
             # write arithmetic command
             command = parser.arg1()
             cw.write_arithmetic(command)
