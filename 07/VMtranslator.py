@@ -10,6 +10,9 @@ C_POP = "C_POP"
 
 # _____________ VMtranslator Program _____________ #
 
+# construct a Parser to parse the VM input file and a CodeWriter to
+# generate code into the corresponding output file.  march through the VM
+# commands in the input file, and generate assembly code for each one of them.
 def write_file(file_str, cw):
     """
     :param file_str: input file
@@ -21,18 +24,19 @@ def write_file(file_str, cw):
 
     while parser.has_more_commands():
         parser.advance()
-        c_type = parser.command_type()
+        if parser.get_cur_command() != "":
+            c_type = parser.command_type()
 
-        if c_type == C_PUSH or c_type == C_POP:
-            # write push / pop command
-            segment = parser.arg1()
-            index = parser.arg2()
-            cw.write_push_pop(c_type, segment, index)
+            if c_type == C_PUSH or c_type == C_POP:
+                # write push / pop command
+                segment = parser.arg1()
+                index = parser.arg2()
+                cw.write_push_pop(c_type, segment, index)
 
-        elif c_type == C_ARITHMETIC:
-            # write arithmetic command
-            command = parser.arg1()
-            cw.write_arithmetic(command)
+            elif c_type == C_ARITHMETIC:
+                # write arithmetic command
+                command = parser.arg1()
+                cw.write_arithmetic(command)
 
 
 if __name__ == '__main__':
