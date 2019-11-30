@@ -19,7 +19,6 @@ COMMENT_INDICATOR = '/'
 # access to their components.
 # In addition, it removes all white space and comments
 class Parser:
-
     # dictionary for command types
     _command_dict = {
         "add": "C_ARITHMETIC",
@@ -62,12 +61,16 @@ class Parser:
             self._cur_command = self.f.readline()
 
             # If the current line is not a command, proceed to the next line
-            while self._cur_command in " \n" or \
-                    (self._cur_command[0] == COMMENT_INDICATOR):
+            while self.has_more_commands() and \
+                    (self._cur_command in " \n" or
+                     self._cur_command[0] == COMMENT_INDICATOR):
                 self._cur_command = self.f.readline()
 
             # remove extra spaces
             self._cur_command = " ".join(self._cur_command.split())
+
+    def get_cur_command(self):
+        return self._cur_command
 
     def command_type(self):
         """
@@ -100,10 +103,11 @@ class Parser:
         command = self._cur_command.split()[0]
 
         # return second arg if command is push / pop / function / call
-        if self._command_dict[command] == C_PUSH or             \
-                self._command_dict[command] == C_POP or         \
-                self._command_dict[command] == C_FUNCTION or    \
+        if self._command_dict[command] == C_PUSH or \
+                self._command_dict[command] == C_POP or \
+                self._command_dict[command] == C_FUNCTION or \
                 self._command_dict[command] == C_CALL:
             return self._cur_command.split()[2]
 
         return None
+
