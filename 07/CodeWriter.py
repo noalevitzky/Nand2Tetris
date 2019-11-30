@@ -109,7 +109,6 @@ class CodeWriter:
             self._write_negate()
             return
         elif command == "and":
-            print("entered and")
             self._write_and()
             return
         elif command == "or":
@@ -129,7 +128,6 @@ class CodeWriter:
         self._write_func()
         self.boolean_counter += 1
 
-
     def _write_negate(self):
         """
         Writes the negation of the stack's last item
@@ -140,7 +138,6 @@ class CodeWriter:
         # write the commands to the out file
         self.write_block(cmd_block)
 
-
     def _write_add(self):
         """
         Writes the addition of the stack's last two item
@@ -150,7 +147,6 @@ class CodeWriter:
         cmd_block.extend([AT_SP, M_MINUS_1, A_M, M_PLUS_D, AT_SP, M_PLUS_1])
         # write the commands to the out file
         self.write_block(cmd_block)
-
 
     def _write_false(self):
         """
@@ -165,7 +161,6 @@ class CodeWriter:
             [current_false, AT_SP, A_M, M_ZERO, AT_SP, M_PLUS_1, current_func,
              JMP])
         self.write_block(cmd_block)
-
 
     def get_current_func_name(self, func_name):
         """
@@ -198,7 +193,6 @@ class CodeWriter:
         # write the commands to the out file
         self.write_block(cmd_block)
 
-
     def _write_eq(self):
 
         cmd_block = self._get_bool([])
@@ -207,17 +201,18 @@ class CodeWriter:
         cmd_block.extend([current_true, JEQ, current_false, JNE])
         self.write_block(cmd_block)
 
-
     def _write_lt(self):
         cmd_block = self._pop_stack_to_d([])
         cmd_block.extend([AT_TEMP, M_D])
         curr_func_ygt = AT_Y_GT + str(self.boolean_counter)
         curr_func_yle = AT_Y_LE + str(self.boolean_counter)
         # get the fitting commands for the ylt loop and yge loop
-        curr_loop_ygt = self.lt_get_ygt_loop(AT_TRUE + str(self.boolean_counter),
-                                             AT_FALSE + str(self.boolean_counter))
-        curr_loop_yle = self.lt_get_yle_loop(AT_TRUE + str(self.boolean_counter),
-                                             AT_FALSE + str(self.boolean_counter))
+        curr_loop_ygt = self.lt_get_ygt_loop(
+            AT_TRUE + str(self.boolean_counter),
+            AT_FALSE + str(self.boolean_counter))
+        curr_loop_yle = self.lt_get_yle_loop(
+            AT_TRUE + str(self.boolean_counter),
+            AT_FALSE + str(self.boolean_counter))
         cmd_block.extend([curr_func_ygt, JGT, curr_func_yle, JLE])
         cmd_block.extend(curr_loop_ygt)
         cmd_block.extend(curr_loop_yle)
@@ -245,10 +240,12 @@ class CodeWriter:
         curr_func_ygt = AT_Y_GT + str(self.boolean_counter)
         curr_func_yle = AT_Y_LE + str(self.boolean_counter)
         # get the fitting commands for the ygt loop and yle loop
-        curr_loop_ygt = self.gt_get_ygt_loop(AT_TRUE + str(self.boolean_counter),
-                                             AT_FALSE + str(self.boolean_counter))
-        curr_loop_yle = self.gt_get_yle_loop(AT_TRUE + str(self.boolean_counter),
-                                             AT_FALSE + str(self.boolean_counter))
+        curr_loop_ygt = self.gt_get_ygt_loop(
+            AT_TRUE + str(self.boolean_counter),
+            AT_FALSE + str(self.boolean_counter))
+        curr_loop_yle = self.gt_get_yle_loop(
+            AT_TRUE + str(self.boolean_counter),
+            AT_FALSE + str(self.boolean_counter))
         cmd_block.extend(
             [curr_func_ygt, JGT, curr_func_yle, JLE])
         cmd_block.extend(curr_loop_ygt)
@@ -271,16 +268,14 @@ class CodeWriter:
              JLE])
         return cmd_block
 
-
     def _write_not(self):
         cmd_block = []
         cmd_block.extend([AT_SP, M_MINUS_1, A_M, M_NOT, AT_SP, M_PLUS_1])
         self.write_block(cmd_block)
 
-
     def _write_and(self):
         cmd_block = self._pop_stack_to_d([])
-        cmd_block.extend([AT_SP, M_MINUS_1,A_M, M_M_AND_D, AT_SP, M_PLUS_1])
+        cmd_block.extend([AT_SP, M_MINUS_1, A_M, M_M_AND_D, AT_SP, M_PLUS_1])
         self.write_block(cmd_block)
 
     def _write_or(self):
@@ -288,18 +283,15 @@ class CodeWriter:
         cmd_block.extend([AT_SP, M_MINUS_1, A_M, M_OR_D, AT_SP, M_PLUS_1])
         self.write_block(cmd_block)
 
-
     def _get_bool(self, cmd_block):
         curr_block = self._pop_stack_to_d(cmd_block)
         curr_block.extend([AT_SP, M_MINUS_1, A_M, D_M_MINUS_D])
         return curr_block
 
-
     def _write_sub(self):
         cmd_block = self._pop_stack_to_d([])
         cmd_block.extend([AT_SP, M_MINUS_1, A_M, M_MINUS_D, AT_SP, M_PLUS_1])
         self.write_block(cmd_block)
-
 
     def _pop_stack_to_d(self, cmd_block):
         """
@@ -310,7 +302,6 @@ class CodeWriter:
         """
         cmd_block.extend([AT_SP, M_MINUS_1, A_M, D_M])
         return cmd_block
-
 
     def write_push_pop(self, command, segment, index):
         """
@@ -327,16 +318,14 @@ class CodeWriter:
     def _read_from_A(self, index):
         """ reads the given index as A """
         cmd_block = []
-        cmd_block.extend([AT+str(index), D_A])
+        cmd_block.extend([AT + str(index), D_A])
         self.write_block(cmd_block)
-
 
     def _read_from_address(self, address):
         """ reads the given index as M (from R at address) """
         cmd_block = []
-        cmd_block.extend([AT+str(address), D_M])
+        cmd_block.extend([AT + str(address), D_M])
         self.write_block(cmd_block)
-
 
     def _write_push(self, segment, index):
         """
@@ -359,12 +348,12 @@ class CodeWriter:
         else:
             # copy content from address held in pointer to D
             self._read_from_address(self.__ram_dict[segment])
-            cmd_block_1,cmd_block_2 = [], []
-            cmd_block_1.extend([AT+CALC, M_D])
+            cmd_block_1, cmd_block_2 = [], []
+            cmd_block_1.extend([AT + CALC, M_D])
             self.write_block(cmd_block_1)
 
             self._read_from_A(index)
-            cmd_block_2.extend([AT+CALC, A_M_PLUS_D, D_M])
+            cmd_block_2.extend([AT + CALC, A_M_PLUS_D, D_M])
             self.write_block(cmd_block_2)
 
         # push D content to stack
@@ -375,47 +364,42 @@ class CodeWriter:
         cmd_block.extend([AT_SP, A_M, M_D, AT_SP, M_PLUS_1])
         self.write_block(cmd_block)
 
-
     def _write_pop(self, segment, index):
         """
         Writes a fully pop command
         :param segment: The segment of the given pop command
         :param index: The index of the given pop command
         """
-        print(segment + index)
         cmd_block = []
         if segment == TEMP or segment == POINTER:
             # calc dest of temp / pointer
             self._read_from_A(self.__ram_dict[segment] + int(index))
-            cmd_block.extend([AT+CALC, M_D])
+            cmd_block.extend([AT + CALC, M_D])
             self.write_block(cmd_block)
-
 
         elif segment == STATIC:
             # calc dest of static
             self._read_from_A(self.f_name + "." + str(index))
-            cmd_block.extend([AT+CALC, M_D])
+            cmd_block.extend([AT + CALC, M_D])
             self.write_block(cmd_block)
-
 
         else:
             # calc dest of segment
             self._read_from_address(str(self.__ram_dict[segment]))
-            cmd_block.extend([AT+CALC, M_D])
+            cmd_block.extend([AT + CALC, M_D])
             self.write_block(cmd_block)
 
             self._read_from_A(index)
             cmd_block.clear()
-            cmd_block.extend([AT+CALC, M_PLUS_D])
+            cmd_block.extend([AT + CALC, M_PLUS_D])
             self.write_block(cmd_block)
         self._pop_to_dest()
 
     def _pop_to_dest(self):
         # add commands for popping stack val to R13 address content
         cmd_block = []
-        cmd_block.extend([AT_SP, M_MINUS_1, A_M, D_M, AT+CALC, A_M,M_D])
+        cmd_block.extend([AT_SP, M_MINUS_1, A_M, D_M, AT + CALC, A_M, M_D])
         self.write_block(cmd_block)
-
 
     def _get_symbol(self, segment):
         """
@@ -438,7 +422,8 @@ class CodeWriter:
         """
         for line in cmd_block:
             self.out_file.write(line + "\n")
-#        self.out_file.write("\n")
+
+    #        self.out_file.write("\n")
 
     def close(self):
         """
