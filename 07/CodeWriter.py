@@ -64,6 +64,7 @@ END = "(END)"
 
 # Translates VM commands into Hack assembly code
 class CodeWriter:
+
     # dict for converting ram segments to ram indices
     __ram_dict = {
         "local": 1,
@@ -84,6 +85,7 @@ class CodeWriter:
         self.f_name = out_file.replace(".hack", "")  # name for statics vars
         self.stack = []
         self.boolean_counter = 0
+        self.cur_file = ""
 
     def set_file_name(self, file_name):
         """
@@ -91,8 +93,7 @@ class CodeWriter:
         :param file_name:
         :return:
         """
-        # ???
-        pass
+        self.cur_file = file_name
 
     def write_arithmetic(self, command):
         """
@@ -132,9 +133,7 @@ class CodeWriter:
         """
         Writes the negation of the stack's last item
         """
-        cmd_block = []
-        # fill the cmd_block with the rest of the relevant commands
-        cmd_block.extend([AT_SP, M_MINUS_1, A_M, M_NEGATE, AT_SP, M_PLUS_1])
+        cmd_block = [AT_SP, M_MINUS_1, A_M, M_NEGATE, AT_SP, M_PLUS_1]
         # write the commands to the out file
         self.write_block(cmd_block)
 
@@ -194,7 +193,6 @@ class CodeWriter:
         self.write_block(cmd_block)
 
     def _write_eq(self):
-
         cmd_block = self._get_bool([])
         current_true = AT_TRUE + str(self.boolean_counter)
         current_false = AT_FALSE + str(self.boolean_counter)
@@ -269,8 +267,7 @@ class CodeWriter:
         return cmd_block
 
     def _write_not(self):
-        cmd_block = []
-        cmd_block.extend([AT_SP, M_MINUS_1, A_M, M_NOT, AT_SP, M_PLUS_1])
+        cmd_block = [AT_SP, M_MINUS_1, A_M, M_NOT, AT_SP, M_PLUS_1]
         self.write_block(cmd_block)
 
     def _write_and(self):
@@ -317,14 +314,12 @@ class CodeWriter:
 
     def _read_from_A(self, index):
         """ reads the given index as A """
-        cmd_block = []
-        cmd_block.extend([AT + str(index), D_A])
+        cmd_block = [AT + str(index), D_A]
         self.write_block(cmd_block)
 
     def _read_from_address(self, address):
         """ reads the given index as M (from R at address) """
-        cmd_block = []
-        cmd_block.extend([AT + str(address), D_M])
+        cmd_block = [AT + str(address), D_M]
         self.write_block(cmd_block)
 
     def _write_push(self, segment, index):
@@ -360,8 +355,7 @@ class CodeWriter:
         self._push_D()
 
     def _push_D(self):
-        cmd_block = []
-        cmd_block.extend([AT_SP, A_M, M_D, AT_SP, M_PLUS_1])
+        cmd_block = [AT_SP, A_M, M_D, AT_SP, M_PLUS_1]
         self.write_block(cmd_block)
 
     def _write_pop(self, segment, index):
@@ -423,13 +417,13 @@ class CodeWriter:
         for line in cmd_block:
             self.out_file.write(line + "\n")
 
-    #        self.out_file.write("\n")
+    def end_file(self):
+        self.out_file.write("\n\n")
 
     def close(self):
         """
         closes the CodeWriter's output file
         """
-        cmd_block = []
-        cmd_block.extend([AT_END, JMP, END, JMP])
+        cmd_block = [AT_END, JMP, END, JMP]
         self.write_block(cmd_block)
         self.out_file.close()
