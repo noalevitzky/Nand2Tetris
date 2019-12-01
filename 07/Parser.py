@@ -110,4 +110,3 @@ class Parser:
             return self._cur_command.split()[2]
 
         return None
-
