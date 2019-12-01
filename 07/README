@@ -19,5 +19,22 @@ Translates VM commands into Hack assembly code
 
 #___________notes___________#
 Overflow:
-We handled the over flow in >,< cases. if the two number a,b have the same
-sign, we could calculate a-b<0 t figure out if a<b.
+We handled the over flow in LT, GT cases.
+Lets assume we're required to check if a LT b.
+Assuming a and b are both positive/negative, a<b if and only if a-b<0.
+If a and b don't share the same sign, performing a-b<0 might conclude a false claim:
+for example, consider a=20,000, b=-30,000. performing a-b<0 is translated to
+20,000+30,000<0  =>  50,000<0.
+The problem in this check stems from the fact that we're working in 16-bit 2's. So, performing 32767+1 will yield a NEGATIVE number,
+even though the decimal representation of 32767+1 is a positive number.
+Back to our example, we will get that 50,000 is actually a negative number, and therefor the inequation 50,000<0 is a true inequaton.
+So, we will get that 20,000<-30,000, and this is not true.
+We handled this situation in the following way:
+
+The first step in our implementation is to check if b<=0 or b>0.
+In case b<=0, we perform the following two checks:
+  1. a>0. therefor, b<=0, a>0 which means a>b. so we will get false to the question "is a LT b"
+  2. a<=0. therefor a<b if and only if a-b<0. 
+In case b>0, we perform the following two checks:
+  1. a<=0, therefor a<=0 and b>0, which means a<0. so will get true to the question "is a LT b"
+  2. a>0, therefor a<b if and only if a-b<0 
