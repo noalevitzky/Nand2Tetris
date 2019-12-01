@@ -2,6 +2,7 @@ import Parser
 import CodeWriter
 from pathlib import Path
 import sys
+import os
 
 C_ARITHMETIC = "C_ARITHMETIC"
 C_PUSH = "C_PUSH"
@@ -20,7 +21,6 @@ def write_file(file_str, cw):
     write command into the output file, using the cw
     """
     parser = Parser.Parser(file_str)
-    cw.set_file_name(file_str)
 
     while parser.has_more_commands():
         parser.advance()
@@ -38,6 +38,7 @@ def write_file(file_str, cw):
                 command = parser.arg1()
                 cw.write_arithmetic(command)
 
+    cw.end_file()
 
 if __name__ == '__main__':
     """
@@ -45,17 +46,23 @@ if __name__ == '__main__':
     """
     path_name = sys.argv[1]
     path = Path(path_name)
-
+    code_writer = None
     # create outfile
     outfile = path_name.replace(".vm", ".asm")
-    code_writer = CodeWriter.CodeWriter(outfile)
 
     if path.is_dir():
         # path is a directory
-        for filename in path.iterdir():
-            write_file(filename, code_writer)
+        outfile = path_name + ".asm"
+        code_writer = CodeWriter.CodeWriter(outfile)
+
+        for filename in os.listdir(path_name):
+            name, ext = os.path.splitext(filename)
+            if ext == ".vm":
+                code_writer.set_file_name(filename)
+                write_file(path_name + "/" + filename, code_writer)
 
     else:
+        code_writer = CodeWriter.CodeWriter(outfile)
         # path is a single file
         write_file(path, code_writer)
 
