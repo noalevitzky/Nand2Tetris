@@ -5,6 +5,7 @@ POINTER = "pointer"
 STATIC = "static"
 CALC = "13"
 CLOSING_BRACKET = ")"
+ARG = "argument"
 
 # _______________ Assembly Commands _______________#
 
@@ -95,7 +96,7 @@ class CodeWriter:
         self.stack = []
         self.boolean_counter = 0
         self._return_address_counter = 0
-        # todo stack of function
+        self.cur_file = ""
 
     def set_file_name(self, file_name):
         """
@@ -103,8 +104,7 @@ class CodeWriter:
         :param file_name:
         :return:
         """
-        # ???
-        pass
+        self.cur_file = file_name
 
     def write_arithmetic(self, command):
         """
@@ -144,9 +144,7 @@ class CodeWriter:
         """
         Writes the negation of the stack's last item
         """
-        cmd_block = []
-        # fill the cmd_block with the rest of the relevant commands
-        cmd_block.extend([AT_SP, M_MINUS_1, A_M, M_NEGATE, AT_SP, M_PLUS_1])
+        cmd_block = [AT_SP, M_MINUS_1, A_M, M_NEGATE, AT_SP, M_PLUS_1]
         # write the commands to the out file
         self.write_block(cmd_block)
 
@@ -281,8 +279,7 @@ class CodeWriter:
         return cmd_block
 
     def _write_not(self):
-        cmd_block = []
-        cmd_block.extend([AT_SP, M_MINUS_1, A_M, M_NOT, AT_SP, M_PLUS_1])
+        cmd_block = [AT_SP, M_MINUS_1, A_M, M_NOT, AT_SP, M_PLUS_1]
         self.write_block(cmd_block)
 
     def _write_and(self):
@@ -329,14 +326,12 @@ class CodeWriter:
 
     def _read_from_A(self, index):
         """ reads the given index as A """
-        cmd_block = []
-        cmd_block.extend([AT + str(index), D_A])
+        cmd_block = [AT + str(index), D_A]
         self.write_block(cmd_block)
 
     def _read_from_address(self, address):
         """ reads the given index as M (from R at address) """
-        cmd_block = []
-        cmd_block.extend([AT + str(address), D_M])
+        cmd_block = [AT + str(address), D_M]
         self.write_block(cmd_block)
 
     def _write_push(self, segment, index):
@@ -360,6 +355,7 @@ class CodeWriter:
         else:
             # copy content from address held in pointer to D
             self._read_from_address(self.__ram_dict[segment])
+            self._read_from_address(segment)
             cmd_block_1, cmd_block_2 = [], []
             cmd_block_1.extend([AT + CALC, M_D])
             self.write_block(cmd_block_1)
@@ -372,8 +368,7 @@ class CodeWriter:
         self._push_D()
 
     def _push_D(self):
-        cmd_block = []
-        cmd_block.extend([AT_SP, A_M, M_D, AT_SP, M_PLUS_1])
+        cmd_block = [AT_SP, A_M, M_D, AT_SP, M_PLUS_1]
         self.write_block(cmd_block)
 
     def _write_pop(self, segment, index):
@@ -442,8 +437,7 @@ class CodeWriter:
         """
         closes the CodeWriter's output file
         """
-        cmd_block = []
-        cmd_block.extend([AT_END, JMP, END, JMP])
+        cmd_block = [AT_END, JMP, END, JMP]
         self.write_block(cmd_block)
         self.out_file.close()
 
@@ -491,7 +485,8 @@ class CodeWriter:
         """
         # todo fix
         # save frame of calling function
-        self._write_push("RETURN_ADD" + str(self._return_address_counter), 0)
+        self._write_push(CONST, "RETURN_ADD" +
+                         str(self._return_address_counter))
         self._write_push("local", 0)
         self._write_push("argument", 0)
         self._write_push("this", 0)
