@@ -7,6 +7,12 @@ import os
 C_ARITHMETIC = "C_ARITHMETIC"
 C_PUSH = "C_PUSH"
 C_POP = "C_POP"
+C_LABEL = "C_LABEL"
+C_GOTO = "C_GOTO"
+C_IF = "C_IF"
+C_FUNCTION = "C_FUNCTION"
+C_RETURN = "C_RETURN"
+C_CALL = "C_CALL"
 
 
 # _____________ VMtranslator Program _____________ #
@@ -21,6 +27,7 @@ def write_file(file_str, cw):
     write command into the output file, using the cw
     """
     parser = Parser.Parser(file_str)
+    cw.set_file_name(file_str)
 
     while parser.has_more_commands():
         parser.advance()
@@ -38,7 +45,33 @@ def write_file(file_str, cw):
                 command = parser.arg1()
                 cw.write_arithmetic(command)
 
+            elif c_type == C_LABEL:
+                label = parser.arg1()
+                cw.write_label(label)
+
+            elif c_type == C_GOTO:
+                dest = parser.arg1()
+                cw.write_goto(dest)
+
+            elif c_type == C_IF:
+                dest = parser.arg1()
+                cw.write_if(dest)
+
+            elif c_type == C_FUNCTION:
+                name = parser.arg1()
+                num_of_var = parser.arg2()
+                cw.write_function(name, num_of_var)
+
+            elif c_type == C_CALL:
+                name = parser.arg1()
+                num_of_arg = parser.arg2()
+                cw.write_call(name, num_of_arg)
+
+            elif c_type == C_RETURN:
+                cw.write_return()
+
     cw.end_file()
+
 
 if __name__ == '__main__':
     """
@@ -47,12 +80,10 @@ if __name__ == '__main__':
     path_name = sys.argv[1]
     path = Path(path_name)
     code_writer = None
-    # create outfile
-    outfile = path_name.replace(".vm", ".asm")
 
     if path.is_dir():
         # path is a directory
-        outfile = path_name + ".asm"
+        outfile = path_name + "/" + os.path.basename(path_name) + ".asm"
         code_writer = CodeWriter.CodeWriter(outfile)
 
         for filename in os.listdir(path_name):
@@ -62,7 +93,9 @@ if __name__ == '__main__':
                 write_file(path_name + "/" + filename, code_writer)
 
     else:
+        outfile = path_name.replace(".vm", ".asm")
         code_writer = CodeWriter.CodeWriter(outfile)
+
         # path is a single file
         write_file(path, code_writer)
 
