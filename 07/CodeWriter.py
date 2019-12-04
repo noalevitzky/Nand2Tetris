@@ -6,6 +6,7 @@ STATIC = "static"
 CALC = "13"
 CLOSING_BRACKET = ")"
 ARG = "argument"
+SP_INIT = "256"
 
 # _______________ Assembly Commands _______________#
 
@@ -96,6 +97,7 @@ class CodeWriter:
         self.boolean_counter = 0
         self._return_address_counter = 0
         self.cur_file = ""
+        self.cur_func = ""
 
     def set_file_name(self, file_name):
         """
@@ -349,7 +351,8 @@ class CodeWriter:
 
         elif segment == STATIC:
             # copy static content to D
-            self._read_from_address(self.f_name + "." + str(index))
+            self._read_from_address(self.cur_file.replace(".vm", "") + "." +
+                                    str(index))
 
         else:
             # copy content from address held in pointer to D
@@ -385,7 +388,8 @@ class CodeWriter:
 
         elif segment == STATIC:
             # calc dest of static
-            self._read_from_A(self.f_name + "." + str(index))
+            self._read_from_A(self.cur_file.replace(".vm", "") + "." +
+                              str(index))
             cmd_block.extend([AT + CALC, M_D])
             self.write_block(cmd_block)
 
@@ -446,8 +450,12 @@ class CodeWriter:
         (also called bootstrap code). This code should be placed in the
         ROM beginning in address 0x0000.
         """
-        cmd_block = [AT + "256", D_A, AT_SP, M_D, AT + "Sys.init", JMP, "\n"]
+        # cmd_block = [AT + SP_INIT, D_A, AT_SP, M_D, AT + "Sys.init", JMP, "\n"]
+        cmd_block = [AT + SP_INIT, D_A, AT_SP, M_D, "\n"]
         self.write_block(cmd_block)
+
+        self.write_call("Sys.init", "0")
+
 
     def write_label(self, label_name):
         """
@@ -455,8 +463,8 @@ class CodeWriter:
         label command.
         :param label_name: name of label
         """
-        full_label = LABEL % label_name
-        # todo generate function name f:c
+        name = self.cur_func + ":" + label_name
+        full_label = LABEL % name
         self.write_block([full_label])
 
     def write_goto(self, dest):
@@ -465,7 +473,8 @@ class CodeWriter:
         goto command.
         :param dest: goto destination
         """
-        cmd_block = [AT + dest, JMP]
+        name = self.cur_func + ":" + dest
+        cmd_block = [AT + name, JMP]
         self.write_block(cmd_block)
 
     def write_if(self, dest):
@@ -474,7 +483,8 @@ class CodeWriter:
         if-goto command.
         """
         cmd_block = self._pop_stack_to_d([])
-        cmd_block.extend([AT + dest, JNE])
+        name = self.cur_func + ":" + dest
+        cmd_block.extend([AT + name, JNE])
         self.write_block(cmd_block)
 
     def _push_frame(self, segment):
@@ -487,12 +497,9 @@ class CodeWriter:
         Writes the assembly code that is the translation of the given
         Call command.
         """
-        # todo fix
         # save frame of calling function
         self._write_push(CONST, "RETURN_ADD" +
                          str(self._return_address_counter))
-        # self._write_push("local", 0)
-
         self._push_frame("local")
         self._push_frame("argument")
         self._push_frame("this")
@@ -508,10 +515,13 @@ class CodeWriter:
         self.write_block(cmd_lcl)
 
         # transfer control
-        self.write_goto(func_name)
+        cmd_block = [AT + func_name, JMP]
+        self.write_block(cmd_block)
 
         # write label
-        self.write_label("RETURN_ADD" + str(self._return_address_counter))
+        name = "RETURN_ADD" + str(self._return_address_counter)
+        full_label = LABEL % name
+        self.write_block([full_label])
         self._return_address_counter += 1
 
     def write_return(self):
@@ -552,9 +562,10 @@ class CodeWriter:
         Function command.
         """
         # declare label
-        self.write_label(func_name)
+        self.cur_func = func_name
+        full_label = LABEL % func_name
+        self.write_block([full_label])
 
         # push local variables initialized to 0
         for i in range(int(num_of_var)):
             self._write_push(CONST, 0)
-
