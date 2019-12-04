@@ -85,6 +85,7 @@ if __name__ == '__main__':
         # path is a directory
         outfile = path_name + "/" + os.path.basename(path_name) + ".asm"
         code_writer = CodeWriter.CodeWriter(outfile)
+        code_writer.write_init()
 
         for filename in os.listdir(path_name):
             name, ext = os.path.splitext(filename)
@@ -95,6 +96,7 @@ if __name__ == '__main__':
     else:
         outfile = path_name.replace(".vm", ".asm")
         code_writer = CodeWriter.CodeWriter(outfile)
+        code_writer.write_init()
 
         # path is a single file
         write_file(path, code_writer)
