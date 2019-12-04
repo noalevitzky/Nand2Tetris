@@ -65,7 +65,6 @@ Y_LE = "(Y_LE"
 END = "(END)"
 
 # _____function Commands______ #
-INIT = "SP=256\ncall Sys.init\n"
 LABEL = "(%s)"
 IF_GOTO = "if-false-goto %s"
 
@@ -447,7 +446,7 @@ class CodeWriter:
         (also called bootstrap code). This code should be placed in the
         ROM beginning in address 0x0000.
         """
-        cmd_block = [INIT]
+        cmd_block = [AT + "256", D_A, AT_SP, M_D, "\n"]
         self.write_block(cmd_block)
 
     def write_label(self, label_name):
