@@ -91,7 +91,6 @@ class Parser:
         elif self._command_dict[command] == C_ARITHMETIC:
             return command
         else:
-
             return self._cur_command.split()[1]
 
     def arg2(self):
@@ -110,3 +109,4 @@ class Parser:
             return self._cur_command.split()[2]
 
         return None
+
