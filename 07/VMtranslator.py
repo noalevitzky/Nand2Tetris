@@ -27,7 +27,6 @@ def write_file(file_str, cw):
     write command into the output file, using the cw
     """
     parser = Parser.Parser(file_str)
-    cw.set_file_name(file_str)
 
     while parser.has_more_commands():
         parser.advance()
