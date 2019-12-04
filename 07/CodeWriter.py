@@ -353,14 +353,14 @@ class CodeWriter:
 
         else:
             # copy content from address held in pointer to D
-            self._read_from_address(self.__ram_dict[segment])
-            self._read_from_address(segment)
-            cmd_block_1, cmd_block_2 = [], []
-            cmd_block_1.extend([AT + CALC, M_D])
+            if segment in self.__ram_dict.keys():
+                self._read_from_address(self.__ram_dict[segment])
+            else:
+                self._read_from_address(segment)
+            cmd_block_1 = [AT + CALC, M_D]
             self.write_block(cmd_block_1)
-
             self._read_from_A(index)
-            cmd_block_2.extend([AT + CALC, A_M_PLUS_D, D_M])
+            cmd_block_2 = [AT + CALC, A_M_PLUS_D, D_M]
             self.write_block(cmd_block_2)
 
         # push D content to stack
@@ -446,7 +446,7 @@ class CodeWriter:
         (also called bootstrap code). This code should be placed in the
         ROM beginning in address 0x0000.
         """
-        cmd_block = [AT + "256", D_A, AT_SP, M_D, "\n"]
+        cmd_block = [AT + "256", D_A, AT_SP, M_D, AT + "Sys.init", JMP, "\n"]
         self.write_block(cmd_block)
 
     def write_label(self, label_name):
@@ -477,6 +477,11 @@ class CodeWriter:
         cmd_block.extend([AT + dest, JNE])
         self.write_block(cmd_block)
 
+    def _push_frame(self, segment):
+        cmd_block = [AT + str(self.__ram_dict[segment]), D_M]
+        self.write_block(cmd_block)
+        self._push_D()
+
     def write_call(self, func_name, num_of_arg):
         """
         Writes the assembly code that is the translation of the given
@@ -486,18 +491,20 @@ class CodeWriter:
         # save frame of calling function
         self._write_push(CONST, "RETURN_ADD" +
                          str(self._return_address_counter))
-        self._write_push("local", 0)
-        self._write_push("argument", 0)
-        self._write_push("this", 0)
-        self._write_push("that", 0)
+        # self._write_push("local", 0)
+
+        self._push_frame("local")
+        self._push_frame("argument")
+        self._push_frame("this")
+        self._push_frame("that")
 
         # reposition args
-        cmd_arg = [AT_SP, D_M, AT + num_of_arg, D_MINUS_M, AT + "5",
-                   D_MINUS_M, AT + "ARG", M_D]
+        cmd_arg = [AT_SP, D_M, AT + num_of_arg, D_MINUS_A, AT + "5",
+                   D_MINUS_A, AT + str(self.__ram_dict["argument"]), M_D]
         self.write_block(cmd_arg)
 
         # reposition lcl
-        cmd_lcl = [AT_SP, D_M, AT + "LCL", M_D]
+        cmd_lcl = [AT_SP, D_M, AT + str(self.__ram_dict["local"]), M_D]
         self.write_block(cmd_lcl)
 
         # transfer control
