@@ -24,12 +24,16 @@ M_OR_D = "M=M|D"
 # _____ A Commands______ #
 A_M = "A=M"
 A_M_PLUS_D = "A=M+D"
+A_D = "A=D"
 
 # _____D Commands______ #
 D_A = "D=A"
 D_M = "D=M"
 D_M_MINUS_D = "D=M-D"
 D_MINUS_M = "D=D-M"
+D_PLUS_M = "D=D+M"
+D_MINUS_A = "D=D-A"
+D_PLUS_A = "D=D+A"
 
 # _____@ Commands______ #
 AT = "@"
@@ -59,14 +63,19 @@ Y_GT = "(Y_GT"
 Y_LE = "(Y_LE"
 END = "(END)"
 
+# _____function Commands______ #
+INIT = "SP=256\ncall Sys.init\n"
+LABEL = "(%s)"
+IF_GOTO = "if-false-goto %s"
+
 
 # _____________ CodeWriter Class _____________ #
 
 # Translates VM commands into Hack assembly code
 class CodeWriter:
-
     # dict for converting ram segments to ram indices
     __ram_dict = {
+        "sp": 0,
         "local": 1,
         "argument": 2,
         "this": 3,
@@ -85,7 +94,8 @@ class CodeWriter:
         self.f_name = out_file.replace(".hack", "")  # name for statics vars
         self.stack = []
         self.boolean_counter = 0
-        self.cur_file = ""
+        self._return_address_counter = 0
+        # todo stack of function
 
     def set_file_name(self, file_name):
         """
@@ -93,7 +103,8 @@ class CodeWriter:
         :param file_name:
         :return:
         """
-        self.cur_file = file_name
+        # ???
+        pass
 
     def write_arithmetic(self, command):
         """
@@ -133,7 +144,9 @@ class CodeWriter:
         """
         Writes the negation of the stack's last item
         """
-        cmd_block = [AT_SP, M_MINUS_1, A_M, M_NEGATE, AT_SP, M_PLUS_1]
+        cmd_block = []
+        # fill the cmd_block with the rest of the relevant commands
+        cmd_block.extend([AT_SP, M_MINUS_1, A_M, M_NEGATE, AT_SP, M_PLUS_1])
         # write the commands to the out file
         self.write_block(cmd_block)
 
@@ -193,6 +206,7 @@ class CodeWriter:
         self.write_block(cmd_block)
 
     def _write_eq(self):
+
         cmd_block = self._get_bool([])
         current_true = AT_TRUE + str(self.boolean_counter)
         current_false = AT_FALSE + str(self.boolean_counter)
@@ -267,7 +281,8 @@ class CodeWriter:
         return cmd_block
 
     def _write_not(self):
-        cmd_block = [AT_SP, M_MINUS_1, A_M, M_NOT, AT_SP, M_PLUS_1]
+        cmd_block = []
+        cmd_block.extend([AT_SP, M_MINUS_1, A_M, M_NOT, AT_SP, M_PLUS_1])
         self.write_block(cmd_block)
 
     def _write_and(self):
@@ -314,12 +329,14 @@ class CodeWriter:
 
     def _read_from_A(self, index):
         """ reads the given index as A """
-        cmd_block = [AT + str(index), D_A]
+        cmd_block = []
+        cmd_block.extend([AT + str(index), D_A])
         self.write_block(cmd_block)
 
     def _read_from_address(self, address):
         """ reads the given index as M (from R at address) """
-        cmd_block = [AT + str(address), D_M]
+        cmd_block = []
+        cmd_block.extend([AT + str(address), D_M])
         self.write_block(cmd_block)
 
     def _write_push(self, segment, index):
@@ -355,7 +372,8 @@ class CodeWriter:
         self._push_D()
 
     def _push_D(self):
-        cmd_block = [AT_SP, A_M, M_D, AT_SP, M_PLUS_1]
+        cmd_block = []
+        cmd_block.extend([AT_SP, A_M, M_D, AT_SP, M_PLUS_1])
         self.write_block(cmd_block)
 
     def _write_pop(self, segment, index):
@@ -424,6 +442,118 @@ class CodeWriter:
         """
         closes the CodeWriter's output file
         """
-        cmd_block = [AT_END, JMP, END, JMP]
+        cmd_block = []
+        cmd_block.extend([AT_END, JMP, END, JMP])
         self.write_block(cmd_block)
         self.out_file.close()
+
+    def write_init(self):
+        """
+        Writes the assembly code that effects the VM initialization
+        (also called bootstrap code). This code should be placed in the
+        ROM beginning in address 0x0000.
+        """
+        cmd_block = [INIT]
+        self.write_block(cmd_block)
+
+    def write_label(self, label_name):
+        """
+        Writes the assembly code that is the translation of the given
+        label command.
+        :param label_name: name of label
+        """
+        full_label = LABEL % label_name
+        # todo generate function name f:c
+        self.write_block([full_label])
+
+    def write_goto(self, dest):
+        """
+        Writes the assembly code that is the translation of the given
+        goto command.
+        :param dest: goto destination
+        """
+        cmd_block = [AT + dest, JMP]
+        self.write_block(cmd_block)
+
+    def write_if(self, dest):
+        """
+        Writes the assembly code that is the translation of the given
+        if-goto command.
+        """
+        cmd_block = self._pop_stack_to_d([])
+        cmd_block.extend([AT + dest, JNE])
+        self.write_block(cmd_block)
+
+    def write_call(self, func_name, num_of_arg):
+        """
+        Writes the assembly code that is the translation of the given
+        Call command.
+        """
+        # todo fix
+        # save frame of calling function
+        self._write_push("RETURN_ADD" + str(self._return_address_counter), 0)
+        self._write_push("local", 0)
+        self._write_push("argument", 0)
+        self._write_push("this", 0)
+        self._write_push("that", 0)
+
+        # reposition args
+        cmd_arg = [AT_SP, D_M, AT + num_of_arg, D_MINUS_M, AT + "5",
+                   D_MINUS_M, AT + "ARG", M_D]
+        self.write_block(cmd_arg)
+
+        # reposition lcl
+        cmd_lcl = [AT_SP, D_M, AT + "LCL", M_D]
+        self.write_block(cmd_lcl)
+
+        # transfer control
+        self.write_goto(func_name)
+
+        # write label
+        self.write_label("RETURN_ADD" + str(self._return_address_counter))
+        self._return_address_counter += 1
+
+    def write_return(self):
+        """
+        Writes the assembly code that is the translation of the given
+        Return command
+        """
+        # write frame temporary var and save ret temp var
+        cmd_block = [AT + "LCL", D_M, AT + "frame", M_D]
+        cmd_block.extend([AT + "frame", D_M, AT + "5", D_MINUS_A, A_D, D_M,
+                          AT + "ret", M_D])
+        self.write_block(cmd_block)
+
+        # pop to argument
+        self._write_pop("argument", 0)
+
+        # restore sp
+        res_sp = [AT + "ARG", D_M, AT + "1", D_PLUS_A, AT_SP, M_D]
+        self.write_block(res_sp)
+
+        # restore frames
+        restore = [AT + "frame", D_M, AT + "1", D_MINUS_A, A_D, D_M,
+                   AT + "THAT", M_D]
+        restore.extend([AT + "frame", D_M, AT + "2", D_MINUS_A, A_D, D_M,
+                        AT + "THIS", M_D])
+        restore.extend([AT + "frame", D_M, AT + "3", D_MINUS_A, A_D, D_M,
+                        AT + "ARG", M_D])
+        restore.extend([AT + "frame", D_M, AT + "4", D_MINUS_A, A_D, D_M,
+                        AT + "LCL", M_D])
+        self.write_block(restore)
+
+        # goto ret
+        self.write_block([AT + "ret", A_M, JMP])
+
+    def write_function(self, func_name, num_of_var):
+        """
+        Writes the assembly code that is the trans. of the given
+        Function command.
+        """
+        # declare label
+        self.write_label(func_name)
+
+        # push local variables initialized to 0
+        for i in range(int(num_of_var)):
+            self._write_push(CONST, 0)
+
