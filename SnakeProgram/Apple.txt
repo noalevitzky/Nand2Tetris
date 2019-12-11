@@ -1,0 +1,20 @@
+/** The Apple class provides a representation of the Appe's in the Snake game. */
+
+Class Apple {
+	field int[2] appleLocation; //Is this how you declare a list?
+
+	/* Creates a new Apple object. */
+	constructor Apple new(int[2] startLocation{
+		let appleLocation = startLocation;
+		return this;
+		}
+
+	/* Returns the location of the Apple on the board */
+	method int[2] getAppleLocation(){
+		return this.appleLocation;
+		}
+
+	/* Sets the Apple location to a new location */
+	method void setAppleLocation(){
+						//Need to think of a random function, or how to implement it in general
+		}

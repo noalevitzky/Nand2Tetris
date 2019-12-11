@@ -1,0 +1,30 @@
+/** The Board class provies a representation of the game board. */
+
+Class Board {
+	field Array gameBoard
+	field int counter
+
+	/* Create a new Board object. */
+	constructor Board new(int rowsAmount, int columnsAmount){
+		let gameBoard = Array.new(rowsAmount);
+		let counter = 0;
+		while (counter<columnsAmount){
+			Board[counter] = Array.new(columnsAmount);
+			counter += 1;
+		return this;
+
+	/* Paints a given square in the board. */
+	method void paintSquare(int row, int column){
+		// Painted square is represented by the number 1, otherwise it is not painted.
+		this.gameBoard[row][column] = 1;
+		return;
+	
+	/* Empties a given square in the board. */
+	method void emptySquare(int row, int column){
+		this.gameBoard[row][column] = 0;	
+		return;
+	
+	/* Returns true if a given square is painted, false otherwise. */
+	method boolean isPainted(int row, int column){
+		return this.gameBoard[row][column] == 1;
+		
