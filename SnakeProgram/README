@@ -1,0 +1,8 @@
+#_______FILES_______#
+main.jack:
+The main program of the snake game.
+Creates relevant objects and interracts with the screen according to the game
+Snake.jack
+A class for the Snake object
+Apple.jack
+A class for the Apple object
