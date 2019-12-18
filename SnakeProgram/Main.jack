@@ -1,0 +1,174 @@
+/** Snake program */
+
+class Main {
+	static Snake snake;
+	static Apple apple;
+	static int direction;
+	static int left, up, right, down;
+	static boolean end;
+	static String youLost, details, length;
+	
+	function void main(){
+		// set directions
+		let left = 130; let up = 131; let right = 132; let down = 133;
+		let direction = down;
+		let end = false;
+		
+		// allocate strings
+		let youLost = "YOU LOST!";
+		let details = "However, you are never a loser until you quit trying.";
+		let length = "Snake length: ";
+		
+		//set apple
+		let apple = Apple.new();
+		do apple.draw();
+		
+		// set snake
+		let snake = Snake.new();
+		do snake.draw();		
+
+		while (~end){
+			do Main.iteration();
+			do Sys.wait(300);
+		}
+		
+		do Main.endGame();
+		return;
+	}
+	
+	/* perform one game iteration */
+	function void iteration(){
+		var int newCell, key;
+		
+		let key = Keyboard.keyPressed();
+		let direction = Main.getDirection(key);	
+		let newCell = Main.getNewCell();
+		let end = snake.isPartOfSnake(newCell);
+		
+		if (~end){
+			if (newCell = apple.getLocation()){
+				// extand
+				do Main.appleWasEaten(newCell);
+			}
+			else {
+				// advance
+				do Main.move(newCell);
+			}	
+		}
+		return;
+	}
+	
+	function void appleWasEaten(int newCell){
+		do apple.updateLocation();
+		do apple.draw();
+		do snake.extand(newCell);
+		do snake.drawCell(newCell);
+		return;
+	}
+	
+	function void move(int newCell){
+		var int tail;
+		let tail = snake.getTail();
+		do snake.advance(newCell);
+		let end = Main.isIllegalMove();
+		if (~end){
+			do snake.clearCell(tail);				
+			do snake.drawCell(newCell);
+		}
+		return;
+	}
+	
+	function int getDirection(int key){
+		if ((key = right) | (key = left) | (key = up) | (key = down)){
+			return key;
+		} 
+		else{
+			return direction;
+		}
+	}
+	
+	function int getNewCell(){
+		if (direction = right){
+			return snake.getHead() + 1;
+		}
+		if (direction = left){
+			return snake.getHead() - 1;
+		}
+		if (direction = up){
+			return snake.getHead() - 512;
+		}
+		else { 
+			// direction = down
+			return snake.getHead() + 512;
+		}
+	}
+	
+	function void endGame(){
+		do Screen.clearScreen();
+		do Output.moveCursor(9, 26);
+		do Output.printString(youLost);
+		do Output.moveCursor(11, 5);
+		do Output.printString(details);
+		do Output.moveCursor(13, 24);
+		do Output.printString(length);
+		do Output.printInt(snake.length());
+		do Main.drawSkull(5615);
+		do Main.dispose();
+		do Sys.halt();
+		return;
+	}
+	
+	function boolean isIllegalMove(){
+		var int head;
+		let head = snake.getHead();
+		if ((direction = up) & (head < 0)){
+			return true;
+		}
+		if ((direction = down) & (head > 8191)){
+			return true;
+		}
+		if ((direction = left) & (Main.modulo(head, 32) = 31)){
+			return true;
+		}
+		if ((direction = right) & (Main.modulo(head, 32) = 0)){
+			return true;
+		} 
+		return false;	
+	}
+	
+	function int modulo(int a, int b){
+		return 	a-(a/b*b);
+	}
+	
+	function void drawSkull(int location) {
+		var int memAddress;
+		let memAddress = 16384 + location;
+		do Memory.poke(memAddress + 0, 8184);
+		do Memory.poke(memAddress + 32, 8196);
+		do Memory.poke(memAddress + 64, 16386);
+		do Memory.poke(memAddress + 96, 16386);
+		do Memory.poke(memAddress + 128, -32767);
+		do Memory.poke(memAddress + 160, -26599);
+		do Memory.poke(memAddress + 192, -17347);
+		do Memory.poke(memAddress + 224, -17347);
+		do Memory.poke(memAddress + 256, -26599);
+		do Memory.poke(memAddress + 288, -32383);
+		do Memory.poke(memAddress + 320, 16514);
+		do Memory.poke(memAddress + 352, 16514);
+		do Memory.poke(memAddress + 384, 14364);
+		do Memory.poke(memAddress + 416, 2640);
+		do Memory.poke(memAddress + 448, 2640);
+		do Memory.poke(memAddress + 480, 2016);
+		return;
+	}
+	
+	/* dispose all objects */
+	function void dispose(){
+		do apple.dispose();
+		do snake.dispose();
+		do youLost.dispose();
+		do details.dispose();
+		do length.dispose();
+		return;
+	}
+}
