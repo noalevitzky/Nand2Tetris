@@ -1,0 +1,62 @@
+/** The Apple class provides a representation of the Appe's in the Snake game. */
+
+class Apple {
+	field int i; // top left cell representing apple location
+	field Array locations;
+
+	/* Creates a new Apple object */
+	constructor Apple new(){
+		// set apple locations
+		let locations = Array.new(4);
+		let locations[0] = 3593; 
+		let locations[1] = 6174;
+		let locations[2] = 2053;
+		let locations[3] = 5130;
+	
+		let i = 0;
+		return this;
+	}
+
+	/* Returns the location of the Apple on the board */
+	method int getLocation(){
+		return locations[i];
+	}
+
+	/* Sets the Apple location to a new location */
+	method void updateLocation(){
+		let i = i + 1;
+		if (i = 4) {
+			let i = 0;
+		}
+		return;
+	}
+	
+	/* draws an apple based on cur location */
+	method void draw(){
+		var int memAddress;
+		let memAddress = 16384 + getLocation();
+		do Memory.poke(memAddress + 0, 6144);
+		do Memory.poke(memAddress + 32, 7296);
+		do Memory.poke(memAddress + 64, 3712);
+		do Memory.poke(memAddress + 96, 1920);
+		do Memory.poke(memAddress + 128, 15292);
+		do Memory.poke(memAddress + 160, 32766);
+		do Memory.poke(memAddress + 192, -4097);
+		do Memory.poke(memAddress + 224, -8193);
+		do Memory.poke(memAddress + 256, -16385);
+		do Memory.poke(memAddress + 288, -16385);
+		do Memory.poke(memAddress + 320, -1);
+		do Memory.poke(memAddress + 352, -1);
+		do Memory.poke(memAddress + 384, 32766);
+		do Memory.poke(memAddress + 416, 16380);
+		do Memory.poke(memAddress + 448, 8184);
+		do Memory.poke(memAddress + 480, 3696);
+		return;
+	}
+
+	/* dispose object */
+	method void dispose(){
+		do Memory.deAlloc(this);
+		return;
+	}	
+}
