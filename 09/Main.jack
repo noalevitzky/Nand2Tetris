@@ -68,15 +68,13 @@ class Main {
 	}
 	
 	function void move(int newCell){
+		var int tail;
+		let tail = snake.getTail();
 		do snake.advance(newCell);
 		let end = Main.isIllegalMove();
 		if (~end){
-			do Screen.clearScreen();
-			do snake.draw();
-			while (snake.isPartOfSnake(apple.getLocation()){
-				do apple.updateLocation()
-			}
-			do apple.draw();
+			do snake.clearCell(tail);
+			do snake.drawCell(newCell);
 		}
 		return;
 	}
@@ -140,7 +138,7 @@ class Main {
 	}
 	
 	function int modulo(int a, int b){
-		return 	a-(Math.multiply(Math.divide(a,b),b);
+		return 	a-(Math.multiply(Math.divide(a,b),b));
 	}
 	
 	function void drawSkull(int location) {
