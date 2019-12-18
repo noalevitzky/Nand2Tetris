@@ -1,1 +1,143 @@
-class Snake
+/** The Snale class provies a representation of the Snake. */
+
+class Snake{
+	field Array cells; //Array of locations, where tail at 0 and head at len(cells)-1
+	field int length;
+	
+	
+	/* create snake for the game */
+	constructor Snake new(){
+		let length = 5;
+		let cells = Array.new(3);
+		let cells[0] = 1053;
+		let cells[1] = 1568; 
+		let cells[2] = 1565; 
+		let cells[3] = 2077; 
+		let cells[4] = 2589; 
+		return this;
+	}
+	
+	method int length(){
+		return length;
+	}
+	
+	/* checks if given cell is part of snake cells, else true (=free) */
+	method boolean isPartOfSnake(int check){
+		var int counter;
+		let counter = 0;
+		while (counter < length){
+			if (cells[counter] = check){
+				return true;
+			}
+			let counter = counter + 1;
+		}
+		return false;
+	}
+	
+	method int getHead(){
+		return cells[length - 1];
+	}
+	
+	method int getTail(){
+		return cells[0];
+	}
+	
+	method void draw(){
+		var int counter;
+		let counter = 0;
+		
+		while (counter < length){
+			do drawCell(cells[counter]);
+			let counter = counter + 1;
+		}
+		return;
+	}
+	
+	method void drawCell(int location) {
+		var int memAddress;
+		let memAddress = 16384 + location;
+		do Memory.poke(memAddress + 0, -1);
+		do Memory.poke(memAddress + 32, -1);
+		do Memory.poke(memAddress + 64, -1);
+		do Memory.poke(memAddress + 96, -1);
+		do Memory.poke(memAddress + 128, -1);
+		do Memory.poke(memAddress + 160, -1);
+		do Memory.poke(memAddress + 192, -1);
+		do Memory.poke(memAddress + 224, -1);
+		do Memory.poke(memAddress + 256, -1);
+		do Memory.poke(memAddress + 288, -1);
+		do Memory.poke(memAddress + 320, -1);
+		do Memory.poke(memAddress + 352, -1);
+		do Memory.poke(memAddress + 384, -1);
+		do Memory.poke(memAddress + 416, -1);
+		do Memory.poke(memAddress + 448, -1);
+		do Memory.poke(memAddress + 480, -1);
+		return;
+	}
+	
+	method void clearCell(int location){
+		var int memAddress;
+		let memAddress = 16384 + location;
+		do Memory.poke(memAddress + 0, 0);
+		do Memory.poke(memAddress + 32, 0);
+		do Memory.poke(memAddress + 64, 0);
+		do Memory.poke(memAddress + 96, 0);
+		do Memory.poke(memAddress + 128, 0);
+		do Memory.poke(memAddress + 160, 0);
+		do Memory.poke(memAddress + 192, 0);
+		do Memory.poke(memAddress + 224, 0);
+		do Memory.poke(memAddress + 256, 0);
+		do Memory.poke(memAddress + 288, 0);
+		do Memory.poke(memAddress + 320, 0);
+		do Memory.poke(memAddress + 352, 0);
+		do Memory.poke(memAddress + 384, 0);
+		do Memory.poke(memAddress + 416, 0);
+		do Memory.poke(memAddress + 448, 0);
+		do Memory.poke(memAddress + 480, 0);
+		return;
+	}
+	
+	/* add new cell to head of snake cells */
+	method void extand(int add){
+		var int counter, temp;
+		var Array newCells;
+
+		let length = length + 1;
+		let newCells = Array.new(length);
+		
+		let counter = 0;
+		while (counter < (length - 1)){
+			let temp = cells[counter];
+			let newCells[counter] = temp;
+			let counter = counter + 1;
+		}
+		let newCells[counter] = add;
+		do cells.dispose();
+		let cells = newCells;
+		return;
+	}
+	
+	/* advance snake, providing new cell to be added in required direction */
+	method void advance(int add){
+		var int counter;
+		var int temp;
+		let counter = 0;
+		
+		// remove first cell and advance snake
+		while (counter < (length - 1)){
+			let temp = cells[counter + 1];
+			let cells[counter] = temp;
+			let counter = counter + 1;
+		}
+		
+		// add new location, based on given x and y
+		let cells[counter] = add;
+		return;
+	}
+	
+	/* dispose object */
+	method void dispose(){
+		do Memory.deAlloc(this);
+		return;
+	}
+}
