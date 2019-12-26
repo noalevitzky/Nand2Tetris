@@ -1,0 +1,18 @@
+giladsid7,noa.levitzky
+gilad sid gilad.sid@mail.huji.ac.il 313328098,
+noa levitzky noa.levitzky@mail.huji.ac.il 205970783
+EX10
+
+#___________files___________#
+JackAnalyzer.py -
+a main drivers for the compiler.
+removes comments from file, creates a tokenizer and a compilation engine
+per each file (can process directories). creates an xml file as an output file.
+
+CompilationEngine.py -
+a recursive top-down syntax analyzer.
+goes over tokenizer tokens and writes to xml file, based on jack's
+functional specification, which is provided in context free grammar table.
+
+JackTokenizer.py -
+a tokenizer (based on regex).
