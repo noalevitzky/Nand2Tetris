@@ -82,7 +82,10 @@ class CompilationEngine:
         """
         key = self.tokenizer.tokenType()
         start = "<" + key + "> "
-        end = " </" + key + ">"
+        if self.get_token() != "do ":
+            end = " </" + key + ">"
+        else:
+            end = "</" + key + ">"
         space = self.cur_indent * SPACE_AMOUNT * " "
         self.output_file.write(space + start + str(self.get_token()) +
                                end + "\n")
@@ -286,7 +289,7 @@ class CompilationEngine:
                 self.compileIf()
             elif self.get_token() == "while":
                 self.compileWhile()
-            elif self.get_token() == "do":
+            elif self.get_token() == "do ":
                 self.compileDo()
             elif self.get_token() == 'return':
                 self.compileReturn()
@@ -439,8 +442,10 @@ class CompilationEngine:
                 re.match(self.tokenizer.str_const_p, self.get_token()) or \
                 re.match(self.keyword_const_p, self.get_token()):
             # write integerConstant | stringConstant | keywordConstant
+
             self._write_xml()
-        elif re.match(self.unary_op_p, self.get_token()):
+        #elif re.match(self.unary_op_p, self.get_token()):
+        elif self.get_token() in ["-", "~"]:
             # write unaryOp term
             self._write_xml()
             self.compileTerm()
