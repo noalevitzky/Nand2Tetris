@@ -15,13 +15,13 @@ if __name__ == '__main__':
             name, ext = os.path.splitext(filename)
             if ext == '.jack':
                 # edit outfile name
-                outfile = source + '/' + name + '.xml'
+                outfile = source + '/' + name + '.vm'
                 # create tokenizer
                 tokenizer = Jt.JackTokenizer(source + '/' + filename)
                 # compile
                 Ce.CompilationEngine(tokenizer, outfile)
     else:
         # source is a single file, compile it
-        outfile = source.replace('.jack', '.xml')
+        outfile = source.replace('.jack', '.vm')
         tokenizer = Jt.JackTokenizer(source)
         Ce.CompilationEngine(tokenizer, outfile)
