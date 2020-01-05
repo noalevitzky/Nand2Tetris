@@ -34,8 +34,8 @@ class CompilationEngine:
     # jack language
     ops = '\+|-|\*|\/|&|\||<|>|='
     unary_ops = '-|~'
-    keyword_consts = 'true|false|null|this'
-    statements = 'let|if|while|do|return'
+    keyword_consts = 'true |false |null |this '
+    statements = 'let |if |while |do |return '
 
     # regex patterns
     operations_p = re.compile(ops)
@@ -164,7 +164,7 @@ class CompilationEngine:
         self._write_xml()
 
         # Write classVarDec until subroutine declaration
-        while self.get_token() in 'static|field':
+        while self.get_token() in 'static |field ':
             self.compileClassVarDec()
 
         # Write Subroutines until the end of the class
@@ -240,7 +240,7 @@ class CompilationEngine:
         """
         Compiles the XML representation of a subroutine
         """
-        # reset symboltable
+        # reset symbol table
         self.symbolTable.startSubroutine()
 
         # write subroutine
@@ -316,7 +316,7 @@ class CompilationEngine:
         self._write_open_terminal(SUBROUTINE_BOD)
         # write "{"
         self._write_xml()
-        while self.get_token() == "var":
+        while self.get_token() == "var ":
             # write varDec
             self.compileVarDec()
         # write statements
@@ -373,15 +373,15 @@ class CompilationEngine:
         self._write_open_terminal(STATEMENTS)
         # according to the curr_token, call the relevant compilation
         while re.match(self.statements_p, self.get_token()):
-            if self.get_token() == "let":
+            if self.get_token() == "let ":
                 self.compileLet()
-            elif self.get_token() == "if":
+            elif self.get_token() == "if ":
                 self.compileIf()
-            elif self.get_token() == "while":
+            elif self.get_token() == "while ":
                 self.compileWhile()
             elif self.get_token() == "do ":
                 self.compileDo()
-            elif self.get_token() == 'return':
+            elif self.get_token() == 'return ':
                 self.compileReturn()
         self._write_close_terminal(STATEMENTS)
         return
@@ -490,7 +490,7 @@ class CompilationEngine:
         self.compileStatements()
         # write "}"
         self._write_xml()
-        if self.get_token() != "else":
+        if self.get_token() != "else ":
             self._write_close_terminal(IF)
             return
         # next token is else. write "else"
@@ -538,8 +538,8 @@ class CompilationEngine:
                 re.match(self.tokenizer.str_const_p, self.get_token()) or \
                 re.match(self.keyword_const_p, self.get_token()):
             # write integerConstant | stringConstant | keywordConstant
-
             self._write_xml()
+
         # elif re.match(self.unary_op_p, self.get_token()):
         elif self.get_token() in ["-", "~"]:
             # write unaryOp term
@@ -550,13 +550,12 @@ class CompilationEngine:
             name = self.get_token()
             self._write_xml()
             space = self.cur_indent * SPACE_AMOUNT * " "
-            if self.symbolTable.kindOf(name) == 'var':
+            if self.symbolTable.kindOf(name) is not None:
                 self.output_file.write(space + self.symbolTable.kindOf(name) +
                                        ' ' + self.symbolTable.indexOf(name) +
                                        ' used\n')
-            elif self.symbolTable.kindOf(name) == 'subroutine':
-                self.output_file.write(space + self.symbolTable.kindOf(name) +
-                                       ' used\n')
+            else: # subroutine
+                self.output_file.write(space + 'subroutine used\n')
 
             if self.get_token() == '[':
                 # write '['
