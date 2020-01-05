@@ -22,7 +22,6 @@ if __name__ == '__main__':
                 # create tokenizer
                 tokenizer = Jt.JackTokenizer(source + '/' + filename)
                 # compile
-                
                 Ce.CompilationEngine(tokenizer, vmWriter)
     else:
         # source is a single file, compile it
