@@ -14,9 +14,9 @@ STRING_CONST = "stringConstant"
 
 class JackTokenizer:
     # jack lexical elements
-    keywords = "class |constructor |function |method |field |static |var |" \
-               "int |char |boolean |void |true |false |null |this |let |do |" \
-               "if |else |while |return "
+    keywords = "class|constructor|function|method|field|static|var|" \
+               "int|char|boolean|void|true|false|null|this|let|do|" \
+               "if|else|while|return"
     symbols = '{|}|\(|\)|\[|]|\.|,|;|\+|-|\*|/|&|\||<|>|=|~'
     identifiers = '[a-zA-Z_]{1}[a-zA-Z_\d]*'
     int_const = '[\d]+'
