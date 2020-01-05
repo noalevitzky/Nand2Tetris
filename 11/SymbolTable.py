@@ -1,7 +1,7 @@
-STATIC = "static"
-FIELD = "field"
-ARG = "arg"
-VAR = "var"
+STATIC = "static "
+FIELD = "field "
+ARG = "argument "
+VAR = "var "
 
 S_TYPE = 0
 S_KIND = 1
@@ -13,7 +13,7 @@ class SymbolTable:
     a service for creating, populating and using symbol table.
     """
 
-    def __init_(self):
+    def __init__(self):
         # new empty symbol tables
         self._class_symbols = {}
         self._subroutine_symbols = {}
@@ -77,9 +77,9 @@ class SymbolTable:
         Returns NONE if the identifier is unknown in the current scope.
         """
         if name in self._subroutine_symbols:
-            return self._subroutine_symbols[name][S_KIND]
+            return str(self._subroutine_symbols[name][S_KIND])
         elif name in self._class_symbols:
-            return self._class_symbols[name][S_KIND]
+            return str(self._class_symbols[name][S_KIND])
         return None
 
     def typeOf(self, name):
@@ -88,9 +88,9 @@ class SymbolTable:
         :return: Returns the type of the named identifier in the current scope.
         """
         if name in self._subroutine_symbols:
-            return self._subroutine_symbols[name][S_TYPE]
+            return str(self._subroutine_symbols[name][S_TYPE])
         elif name in self._class_symbols:
-            return self._class_symbols[name][S_TYPE]
+            return str(self._class_symbols[name][S_TYPE])
         # return None
 
     def indexOf(self, name):
@@ -99,8 +99,8 @@ class SymbolTable:
         :return: Returns the index assigned to named identifier.
         """
         if name in self._subroutine_symbols:
-            return self._subroutine_symbols[name][S_INDEX]
+            return str(self._subroutine_symbols[name][S_INDEX])
         elif name in self._class_symbols:
-            return self._class_symbols[name][S_INDEX]
+            return str(self._class_symbols[name][S_INDEX])
         # return None
 
