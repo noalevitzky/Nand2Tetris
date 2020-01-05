@@ -1,7 +1,7 @@
-STATIC = "static "
-FIELD = "field "
-ARG = "argument "
-VAR = "var "
+STATIC = "static"
+FIELD = "field"
+ARG = "argument"
+VAR = "var"
 
 S_TYPE = 0
 S_KIND = 1
