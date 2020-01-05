@@ -14,12 +14,15 @@ STRING_CONST = "stringConstant"
 
 class JackTokenizer:
     # jack lexical elements
-    keywords = "class|constructor|function|method|field|static|var|int|char |boolean|void|true|false|null|this|let|do |if|else|while|return"
+    keywords = "class |constructor |function |method |field |static |var |" \
+               "int |char |boolean |void |true |false |null |this |let |do |" \
+               "if |else |while |return "
     symbols = '{|}|\(|\)|\[|]|\.|,|;|\+|-|\*|/|&|\||<|>|=|~'
     identifiers = '[a-zA-Z_]{1}[a-zA-Z_\d]*'
     int_const = '[\d]+'
     str_const = '\"[^\r\n]+\"'
-    all_tokens = keywords + '|' + symbols + '|' + identifiers + '|' + int_const + '|' + str_const
+    all_tokens = keywords + '|' + symbols + '|' + identifiers + '|' + \
+                 int_const + '|' + str_const
     comments = '//[^\n]*\n|/\*(.|\n)*?\*/'
     # regex patterns
     keyword_p = re.compile(keywords)
@@ -47,8 +50,6 @@ class JackTokenizer:
             content = re.sub(self.comments_p, ' ', f.read())
         # create an array of all tokens
         self._tokens = re.findall(self.all_tokens_p, content)
-        if "uble" in self._tokens:
-            print("there is a bug in the processing of the file")
         return
 
     def hasMoreTokens(self):
