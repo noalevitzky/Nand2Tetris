@@ -18,8 +18,6 @@ class JackTokenizer:
     symbols = '{|}|\(|\)|\[|]|\.|,|;|\+|-|\*|/|&|\||<|>|=|~'
     identifiers = '[a-zA-Z_]{1}[a-zA-Z_\d]*'
     int_const = '[\d]+'
-    #TODO: fix this regex
-    #str_const = '\"[^\r\n\"]+\"'
     str_const = '\"[^\r\n]+\"'
     all_tokens = keywords + '|' + symbols + '|' + identifiers + '|' + int_const + '|' + str_const
     comments = '//[^\n]*\n|/\*(.|\n)*?\*/'
