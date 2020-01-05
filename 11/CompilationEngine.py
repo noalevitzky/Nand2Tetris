@@ -1,4 +1,5 @@
 import re
+import SymbolTable
 
 SPACE_AMOUNT = 2
 INCREASE = 1
@@ -99,7 +100,16 @@ class CompilationEngine:
         """
         # write subroutineName / className / varName
         if not self.get_token() in '(.':
+            name = self.get_token()
             self._write_xml()
+            space = self.cur_indent * SPACE_AMOUNT * " "
+            if self.symbolTable.kindOf(name) is None:
+                self.output_file.write(space + 'subroutine or class used')
+            else:
+                self.output_file.write(space + self.symbolTable.kindOf(name) +
+                                       ' ' + self.symbolTable.indexOf(name) +
+                                       ' used\n')
+
         if self.get_token() == '(':
             # write '('
             self._write_xml()
@@ -111,8 +121,12 @@ class CompilationEngine:
         # else, write className|VarName.subroutineName(expList)
         # write '.'
         self._write_xml()
+
         # write SubName
         self._write_xml()
+        space = self.cur_indent * SPACE_AMOUNT * " "
+        self.output_file.write(space + 'subroutine used\n')
+
         # write '('
         self._write_xml()
         # write expressionList
@@ -126,6 +140,7 @@ class CompilationEngine:
         self.cur_indent = 0
         self.output_file = open(output_file, 'w')
         self.tokenizer = tokenizer
+        self.symbolTable = SymbolTable.SymbolTable()
         # compile based on tokenizer, to output_file
         self.compileClass()
 
@@ -139,19 +154,27 @@ class CompilationEngine:
         self._write_open_terminal(CLASS)
         # write 'class'
         self._write_xml()
+
         # write className
         self._write_xml()
+        space = self.cur_indent * SPACE_AMOUNT * " "
+        self.output_file.write(space + 'class defined\n')
+
         # write '{'
         self._write_xml()
+
         # Write classVarDec until subroutine declaration
         while self.get_token() in 'static|field':
             self.compileClassVarDec()
+
         # Write Subroutines until the end of the class
         while self.get_token() != "}":
             self.compileSubroutine()
+
         # write '}'
         self._write_xml()
         self._write_close_terminal(CLASS)
+
         return
 
     def get_token(self):
@@ -176,17 +199,38 @@ class CompilationEngine:
         """
         # write classVarDec
         self._write_open_terminal(CLASS_VAR_DEC)
-        # write 'static'/'field'
+
+        # write 'static'|'field'
+        kind = self.get_token()
         self._write_xml()
+
         # write type
+        myType = self.get_token()
         self._write_xml()
+        # todo if type is object of class, class is use??
+        # if myType not in ['int', 'char', 'boolean']:
+        #     space = self.cur_indent * SPACE_AMOUNT * " "
+        #     self.output_file.write(space + 'class used\n')
+
         # write varName
+        name = self.get_token()
         self._write_xml()
+        self.symbolTable.define(name, myType, kind)
+        space = self.cur_indent * SPACE_AMOUNT * " "
+        self.output_file.write(space + self.symbolTable.kindOf(name) + ' ' +
+                               self.symbolTable.indexOf(name) + ' defined\n')
+
         while self.get_token() == ',':
             # write ','
             self._write_xml()
             # write varName
+            name = self.get_token()
             self._write_xml()
+            self.symbolTable.define(name, myType, kind)
+            space = self.cur_indent * SPACE_AMOUNT * " "
+            self.output_file.write(space + self.symbolTable.kindOf(name) +
+                                   ' ' + self.symbolTable.indexOf(name) +
+                                   ' defined\n')
         # write ";"
         self._write_xml()
         self._write_close_terminal(CLASS_VAR_DEC)
@@ -196,14 +240,21 @@ class CompilationEngine:
         """
         Compiles the XML representation of a subroutine
         """
+        # reset symboltable
+        self.symbolTable.startSubroutine()
+
         # write subroutine
         self._write_open_terminal(SUBROUTINE_DEC)
-        # write 'constructor' | 'function' | 'method
+        # write 'constructor' | 'function' | 'method'
         self._write_xml()
         # write 'void' | type
         self._write_xml()
+
         # write subroutineName
         self._write_xml()
+        space = self.cur_indent * SPACE_AMOUNT * " "
+        self.output_file.write(space + 'subroutine defined\n')
+
         # write "("
         self._write_xml()
         # write parameterList
@@ -213,26 +264,47 @@ class CompilationEngine:
         # write subroutineBody
         self.compileSubroutineBody()
         self._write_close_terminal(SUBROUTINE_DEC)
+
         return
 
     def compileParameterList(self):
         """
         Compiles the XML representation of parameterList
         """
+        kind = 'argument'
         # write parameterList
         self._write_open_terminal(PARAM_LIST)
         if self.get_token() != ')':
             # write type
+            myType = self.get_token()
             self._write_xml()
+
             # write varName
+            name = self.get_token()
             self._write_xml()
+            self.symbolTable.define(name, myType, kind)
+            space = self.cur_indent * SPACE_AMOUNT * " "
+            self.output_file.write(space + self.symbolTable.kindOf(name) + ' ' +
+                                   self.symbolTable.indexOf(name) +
+                                   ' defined\n')
+
             while self.get_token() == ',':
                 # write ','
                 self._write_xml()
+
                 # write type
+                myType = self.get_token()
                 self._write_xml()
+
                 # write varName
+                name = self.get_token()
                 self._write_xml()
+                self.symbolTable.define(name, myType, kind)
+                space = self.cur_indent * SPACE_AMOUNT * " "
+                self.output_file.write(space + self.symbolTable.kindOf(name) +
+                                       ' ' + self.symbolTable.indexOf(name) +
+                                       ' defined\n')
+
         self._write_close_terminal(PARAM_LIST)
         return
 
@@ -260,17 +332,35 @@ class CompilationEngine:
         """
         # write varDec
         self._write_open_terminal(VAR_DEC)
+
         # write 'var'
+        kind = self.get_token()
         self._write_xml()
+
         # write type
+        myType = self.get_token()
         self._write_xml()
+
         # write varName
+        name = self.get_token()
         self._write_xml()
+        self.symbolTable.define(name, myType, kind)
+        space = self.cur_indent * SPACE_AMOUNT * " "
+        self.output_file.write(space + self.symbolTable.kindOf(name) + ' ' +
+                               self.symbolTable.indexOf(name) + ' defined\n')
+
         while self.get_token() == ',':
             # write ','
             self._write_xml()
+
             # write varName
+            name = self.get_token()
             self._write_xml()
+            self.symbolTable.define(name, myType, kind)
+            space = self.cur_indent * SPACE_AMOUNT * " "
+            self.output_file.write(space + self.symbolTable.kindOf(name) +
+                                   ' ' + self.symbolTable.indexOf(name) +
+                                   ' defined\n')
         # write ';'
         self._write_xml()
         self._write_close_terminal(VAR_DEC)
@@ -319,8 +409,14 @@ class CompilationEngine:
         self._write_open_terminal(LET)
         # write 'let'
         self._write_xml()
+
         # write varName
+        name = self.get_token()
         self._write_xml()
+        space = self.cur_indent * SPACE_AMOUNT * " "
+        self.output_file.write(space + self.symbolTable.kindOf(name) + ' ' +
+                               self.symbolTable.indexOf(name) + ' used\n')
+
         if self.get_token() == '[':
             # write '[ expression ]'
             self._write_xml()
@@ -444,14 +540,24 @@ class CompilationEngine:
             # write integerConstant | stringConstant | keywordConstant
 
             self._write_xml()
-        #elif re.match(self.unary_op_p, self.get_token()):
+        # elif re.match(self.unary_op_p, self.get_token()):
         elif self.get_token() in ["-", "~"]:
             # write unaryOp term
             self._write_xml()
             self.compileTerm()
         else:
             # write varName/subroutineName
+            name = self.get_token()
             self._write_xml()
+            space = self.cur_indent * SPACE_AMOUNT * " "
+            if self.symbolTable.kindOf(name) == 'var':
+                self.output_file.write(space + self.symbolTable.kindOf(name) +
+                                       ' ' + self.symbolTable.indexOf(name) +
+                                       ' used\n')
+            elif self.symbolTable.kindOf(name) == 'subroutine':
+                self.output_file.write(space + self.symbolTable.kindOf(name) +
+                                       ' used\n')
+
             if self.get_token() == '[':
                 # write '['
                 self._write_xml()
