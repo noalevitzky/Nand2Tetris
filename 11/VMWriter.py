@@ -7,7 +7,7 @@ class VMWriter:
         Creates a new VMWriter object and prepares to write to a given file
         :param output_file: The file to write to the VM code
         """
-        self.output_file = output_file
+        self.output_file = open(output_file, "w")
 
     def writeVM(self, to_write):
         """
@@ -22,7 +22,7 @@ class VMWriter:
         :param segment: The segment to write
         :param index: The index of the segment
         """
-        to_write = "push " + segment + SPACE + index
+        to_write = "push " + segment + SPACE + str(index)
         self.writeVM(to_write)
 
     def writePop(self, segment, index):
@@ -31,7 +31,7 @@ class VMWriter:
         :param segment: The segment to write
         :param index: The index of the segment
         """
-        to_write = "pop " + segment + SPACE + index
+        to_write = "pop " + segment + SPACE + str(index)
         self.writeVM(to_write)
 
     def writeArithmetic(self, command):
@@ -72,7 +72,7 @@ class VMWriter:
         :param name: The name of the function
         :param nArgs: The amount of function arguments
         """
-        to_write = "call " + name + SPACE + nArgs
+        to_write = "call " + str(name) + SPACE + str(nArgs)
         self.writeVM(to_write)
 
     def writeFunction(self, name, nLocals):
@@ -81,7 +81,7 @@ class VMWriter:
         :param name: The name of the function
         :param nLocals: The amount of local variables the function has
         """
-        to_write = "function " + name + SPACE + nLocals
+        to_write = "function " + name + SPACE + str(nLocals)
         self.writeVM(to_write)
 
     def writeReturn(self):
