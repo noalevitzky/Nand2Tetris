@@ -1,6 +1,6 @@
 STATIC = "static"
 FIELD = "field"
-ARG = "argument"
+ARG = "arg"
 VAR = "var"
 
 S_TYPE = 0
@@ -17,6 +17,7 @@ class SymbolTable:
         # new empty symbol tables
         self._class_symbols = {}
         self._subroutine_symbols = {}
+
         # self._cur_scope = 0
         self._index_static, self._index_field = 0, 0
         self._index_arg, self._index_var = 0, 0
@@ -29,7 +30,9 @@ class SymbolTable:
         """
         # erase all names in prev subroutine symbol table
         self._subroutine_symbols.clear()
-        self._index_arg, self._index_var = 0, 0
+        self._index_arg = 0
+        #TODO: handle index initialization when starting a new subroutine
+        self._index_var = 0
         return
 
     def define(self, name, type, kind):
@@ -77,9 +80,9 @@ class SymbolTable:
         Returns NONE if the identifier is unknown in the current scope.
         """
         if name in self._subroutine_symbols:
-            return str(self._subroutine_symbols[name][S_KIND])
+            return self._subroutine_symbols[name][S_KIND]
         elif name in self._class_symbols:
-            return str(self._class_symbols[name][S_KIND])
+            return self._class_symbols[name][S_KIND]
         return None
 
     def typeOf(self, name):
@@ -88,9 +91,9 @@ class SymbolTable:
         :return: Returns the type of the named identifier in the current scope.
         """
         if name in self._subroutine_symbols:
-            return str(self._subroutine_symbols[name][S_TYPE])
+            return self._subroutine_symbols[name][S_TYPE]
         elif name in self._class_symbols:
-            return str(self._class_symbols[name][S_TYPE])
+            return self._class_symbols[name][S_TYPE]
         # return None
 
     def indexOf(self, name):
@@ -99,8 +102,16 @@ class SymbolTable:
         :return: Returns the index assigned to named identifier.
         """
         if name in self._subroutine_symbols:
-            return str(self._subroutine_symbols[name][S_INDEX])
+            return self._subroutine_symbols[name][S_INDEX]
         elif name in self._class_symbols:
-            return str(self._class_symbols[name][S_INDEX])
+            return self._class_symbols[name][S_INDEX]
         # return None
 
+    def is_declared(self, name):
+        """
+        Checks if a given object was already declared
+        :param name: The object to check
+        :return: True if the object is un-known to the symbol table, false otherwise
+        """
+        return (self._subroutine_symbols[name] is not None) or \
+                (self._class_symbols[name] is not None)
