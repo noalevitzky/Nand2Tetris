@@ -28,6 +28,7 @@ SYMBOL = "symbol"
 IDENTIFIER = "identifier"
 INT_CONST = "integerConstant"
 STRING_CONST = "stringConstant"
+OPERATION_TABLE = {"+":"add", "-":"sub", "=":"eq", ">":"gt", "<":"lt", "|":"or", "&":"and", "/":"Math.divide()", "*":"Math.multiply()"}
 
 
 class CompilationEngine:
@@ -43,112 +44,87 @@ class CompilationEngine:
     keyword_const_p = re.compile(keyword_consts)
     statements_p = re.compile(statements)
 
-    #  ___________ NON-API METHODS ___________ #
-    def _write_open_terminal(self, name):
-        """
-        writes opening name tag
-        :param name: to be printed
-        :return: none
-        """
-        self.output_file.write(" " * self.cur_indent * SPACE_AMOUNT +
-                               "<" + name + ">\n")
-        self._mod_indent(INCREASE)
-        return
-
-    def _write_close_terminal(self, name):
-        """
-        writes closing name tag
-        :param name: to be printed
-        :return: none
-        """
-        self._mod_indent(DECREASE)
-        to_write = " " * self.cur_indent * SPACE_AMOUNT + \
-                   "</" + name + ">" + "\n"
-        self.output_file.write(to_write)
-        return
-
-    def _mod_indent(self, action):
-        """
-        increase or decrease the current indentation according to the action
-        :param action: increase or decrease
-        :return: none
-        """
-        self.cur_indent += action
-        return
-
-    def _write_xml(self):
-        """
-        Writes a single terminal output
-        :return: none
-        """
-        key = self.tokenizer.tokenType()
-        start = "<" + key + "> "
-        if self.get_token() != "do" and self.get_token() != "char":
-            end = " </" + key + ">"
-        else:
-            end = "</" + key + ">"
-        space = self.cur_indent * SPACE_AMOUNT * " "
-        self.output_file.write(space + start + str(self.get_token()) +
-                               end + "\n")
-        if self.tokenizer.hasMoreTokens():
-            self.tokenizer.advance()
-        return
-
     def _compileSubroutineCall(self):
         """
-        Compiles the XML representation of a subroutineCall
+        Compiles the VM representation of a subroutineCall
         """
-        if not self.get_token() in '(.':
-            # write subroutineName / className / varName
-            name = self.get_token()
-            self._write_xml()
-
-            space = self.cur_indent * SPACE_AMOUNT * " "
-            if self.symbolTable.kindOf(name) is not None:
-                # name is varName
-                self.output_file.write(space + self.symbolTable.kindOf(name) +
-                                       ' ' + self.symbolTable.indexOf(name) +
-                                       ' used')
-            else:
-                if self.get_token() == '(':
-                    # name is subroutine
-                    self.output_file.write(space + 'subroutine used\n')
-                elif self.get_token() == '.':
-                    # name is class
-                    self.output_file.write(space + 'class used\n')
-
-        if self.get_token() == '(':
-            # write '('
-            self._write_xml()
-            # write expressionList
-            self.compileExpressionList()
-            # write ")"
-            self._write_xml()
-            return
-
-        # else, write .subroutineName(expList)
-        # write '.'
-        self._write_xml()
-
-        # write SubName
-        self._write_xml()
-        space = self.cur_indent * SPACE_AMOUNT * " "
-        self.output_file.write(space + 'subroutine used\n')
-
-        # write '('
-        self._write_xml()
-        # write expressionList
+        # Check if this method belongs to another class
+        first_string = self.get_token()
+        self.tokenizer.advance()
+        # If the function call is func()
+        if self.get_token() == "(":
+            func_name = first_string
+            func_call_name = self.class_name + "." + func_name
+        # If the function call is class.func()
+        else:
+            # current token is "."
+            class_name = first_string
+            self.tokenizer.advance()
+            func_name = self.get_token()
+            self.tokenizer.advance()
+            func_call_name = class_name + "." + func_name
+        self.tokenizer.advance()
+        # Now the current token is the beginning of the arguments list
+        # Todo: Modify compileExpressionList to update the self.arg_num
+        # Todo: Make sure the CompileExpressionList pushes the arguments for the function call
         self.compileExpressionList()
-        # write ')'
-        self._write_xml()
+        self.vm_writer.writeCall(func_call_name, self.arg_num)
+
+
+        #   if not self.get_token() in '(.':
+        #       # write subroutineName / className / varName
+        #       name = self.get_token()
+        #       self._write_xml()
+        #
+        #       space = self.cur_indent * SPACE_AMOUNT * " "
+        #       if self.symbolTable.kindOf(name) is not None:
+        #           # name is varName
+        #           self.output_file.write(space + self.symbolTable.kindOf(name) +
+        #                                  ' ' + self.symbolTable.indexOf(name) +
+        #                                  ' used')
+        #       else:
+        #           if self.get_token() == '(':
+        #               # name is subroutine
+        #               self.output_file.write(space + 'subroutine used\n')
+        #           elif self.get_token() == '.':
+        #               # name is class
+        #               self.output_file.write(space + 'class used\n')
+        #
+        #   if self.get_token() == '(':
+        #       # write '('
+        #       self._write_xml()
+        #       # write expressionList
+        #       self.compileExpressionList()
+        #       # write ")"
+        #       self._write_xml()
+        #       return
+        #
+        #   # else, write .subroutineName(expList)
+        #   # write '.'
+        #   self._write_xml()
+        #
+        #   # write SubName
+        #   self._write_xml()
+        #   space = self.cur_indent * SPACE_AMOUNT * " "
+        #   self.output_file.write(space + 'subroutine used\n')
+        #
+        #   # write '('
+        #   self._write_xml()
+        #   # write expressionList
+        #   self.compileExpressionList()
+        #   # write ')'
+        #   self._write_xml()
+        # _write_xml
         return
 
     #  ___________ API METHODS _____________ #
-    def __init__(self, tokenizer, output_file):
+    def __init__(self, tokenizer, VMWriter):
         self.cur_indent = 0
-        self.output_file = open(output_file, 'w')
+        self.vm_writer = VMWriter
         self.tokenizer = tokenizer
         self.symbolTable = SymbolTable.SymbolTable()
+        self.class_name = ""
+        self.arg_num = 0
         # compile based on tokenizer, to output_file
         self.compileClass()
 
@@ -156,32 +132,34 @@ class CompilationEngine:
         """
         Writes an XML file of a class
         """
+
         # Start reading from JACK file
         self.tokenizer.advance()
         # Declare the class
-        self._write_open_terminal(CLASS)
-        # write 'class'
-        self._write_xml()
-
-        # write className
-        self._write_xml()
-        space = self.cur_indent * SPACE_AMOUNT * " "
-        self.output_file.write(space + 'class defined\n')
+        # self._write_open_terminal(CLASS)
+        # advance to 'class'
+        self.tokenizer.advance()
+        # advance to className
+        self.tokenizer.advance()
+        # save class name
+        self.class_name = self.get_token()
 
         # write '{'
-        self._write_xml()
+        self.tokenizer.advance()
 
         # Write classVarDec until subroutine declaration
+        # TODO: I think this is useless in project 11
         while self.get_token() in 'static|field':
             self.compileClassVarDec()
+
 
         # Write Subroutines until the end of the class
         while self.get_token() != "}":
             self.compileSubroutine()
 
-        # write '}'
-        self._write_xml()
-        self._write_close_terminal(CLASS)
+        # advance to '}'
+        self.tokenizer.advance()
+        # self._write_close_terminal(CLASS)
 
         return
 
@@ -206,15 +184,14 @@ class CompilationEngine:
         Compiles the XML representation of class variables declaration
         """
         # write classVarDec
-        self._write_open_terminal(CLASS_VAR_DEC)
 
         # write 'static'|'field'
         kind = self.get_token()
-        self._write_xml()
+        self.tokenizer.advance()
 
         # write type
         myType = self.get_token()
-        self._write_xml()
+        self.tokenizer.advance()
         # todo if type is object of class, class is use??
         # if myType not in ['int', 'char', 'boolean']:
         #     space = self.cur_indent * SPACE_AMOUNT * " "
@@ -222,56 +199,48 @@ class CompilationEngine:
 
         # write varName
         name = self.get_token()
-        self._write_xml()
+        self.tokenizer.advance()
         self.symbolTable.define(name, myType, kind)
-        space = self.cur_indent * SPACE_AMOUNT * " "
-        self.output_file.write(space + self.symbolTable.kindOf(name) + ' ' +
-                               self.symbolTable.indexOf(name) + ' defined\n')
 
         while self.get_token() == ',':
             # write ','
-            self._write_xml()
+            self.tokenizer.advance()
             # write varName
             name = self.get_token()
-            self._write_xml()
+            self.tokenizer.advance()
             self.symbolTable.define(name, myType, kind)
-            space = self.cur_indent * SPACE_AMOUNT * " "
-            self.output_file.write(space + self.symbolTable.kindOf(name) +
-                                   ' ' + self.symbolTable.indexOf(name) +
-                                   ' defined\n')
+
         # write ";"
-        self._write_xml()
-        self._write_close_terminal(CLASS_VAR_DEC)
+        self.tokenizer.advance()
+
         return
 
     def compileSubroutine(self):
         """
-        Compiles the XML representation of a subroutine
+        Compiles the VM representation of a subroutine
         """
         # reset symbol table
         self.symbolTable.startSubroutine()
 
         # write subroutine
-        self._write_open_terminal(SUBROUTINE_DEC)
+        # self._write_open_terminal(SUBROUTINE_DEC)
         # write 'constructor' | 'function' | 'method'
-        self._write_xml()
+        self.tokenizer.advance()
         # write 'void' | type
-        self._write_xml()
+        self.tokenizer.advance()
 
         # write subroutineName
-        self._write_xml()
-        space = self.cur_indent * SPACE_AMOUNT * " "
-        self.output_file.write(space + 'subroutine defined\n')
+        self.tokenizer.advance()
 
         # write "("
-        self._write_xml()
+        self.tokenizer.advance()
         # write parameterList
         self.compileParameterList()
         # write ")"
-        self._write_xml()
+        self.tokenizer.advance()
         # write subroutineBody
         self.compileSubroutineBody()
-        self._write_close_terminal(SUBROUTINE_DEC)
+
 
         return
 
@@ -280,106 +249,81 @@ class CompilationEngine:
         Compiles the XML representation of parameterList
         """
         kind = 'argument'
-        # write parameterList
-        self._write_open_terminal(PARAM_LIST)
         if self.get_token() != ')':
             # write type
             myType = self.get_token()
-            self._write_xml()
+            self.tokenizer.advance()
 
             # write varName
             name = self.get_token()
-            self._write_xml()
+            self.tokenizer.advance()
             self.symbolTable.define(name, myType, kind)
-            space = self.cur_indent * SPACE_AMOUNT * " "
-            self.output_file.write(space + self.symbolTable.kindOf(name) + ' ' +
-                                   self.symbolTable.indexOf(name) +
-                                   ' defined\n')
 
             while self.get_token() == ',':
                 # write ','
-                self._write_xml()
+                self.tokenizer.advance()
 
                 # write type
                 myType = self.get_token()
-                self._write_xml()
+                self.tokenizer.advance()
 
                 # write varName
                 name = self.get_token()
-                self._write_xml()
+                self.tokenizer.advance()
                 self.symbolTable.define(name, myType, kind)
-                space = self.cur_indent * SPACE_AMOUNT * " "
-                self.output_file.write(space + self.symbolTable.kindOf(name) +
-                                       ' ' + self.symbolTable.indexOf(name) +
-                                       ' defined\n')
 
-        self._write_close_terminal(PARAM_LIST)
         return
 
     def compileSubroutineBody(self):
         """
         Compiles the XML representation of a subroutineBody
         """
-        # write subroutineBody
-        self._write_open_terminal(SUBROUTINE_BOD)
         # write "{"
-        self._write_xml()
+        self.tokenizer.advance()
         while self.get_token() == "var":
             # write varDec
             self.compileVarDec()
         # write statements
         self.compileStatements()
         # write "}" after the last statement (end of method body)
-        self._write_xml()
-        self._write_close_terminal(SUBROUTINE_BOD)
+        self.tokenizer.advance()
         return
 
     def compileVarDec(self):
         """
         Compiles the XML representation of variableDeclaration
         """
-        # write varDec
-        self._write_open_terminal(VAR_DEC)
 
         # write 'var'
         kind = self.get_token()
-        self._write_xml()
+        self.tokenizer.advance()
 
         # write type
         myType = self.get_token()
-        self._write_xml()
+        self.tokenizer.advance()
 
         # write varName
         name = self.get_token()
-        self._write_xml()
+        self.tokenizer.advance()
 
         self.symbolTable.define(name, myType, kind)
-        space = self.cur_indent * SPACE_AMOUNT * " "
-        self.output_file.write(space + self.symbolTable.kindOf(name) + ' ' +
-                               self.symbolTable.indexOf(name) + ' defined\n')
 
         while self.get_token() == ',':
             # write ','
-            self._write_xml()
+            self.tokenizer.advance()
 
             # write varName
             name = self.get_token()
-            self._write_xml()
+            self.tokenizer.advance()
             self.symbolTable.define(name, myType, kind)
-            space = self.cur_indent * SPACE_AMOUNT * " "
-            self.output_file.write(space + self.symbolTable.kindOf(name) +
-                                   ' ' + self.symbolTable.indexOf(name) +
-                                   ' defined\n')
         # write ';'
-        self._write_xml()
-        self._write_close_terminal(VAR_DEC)
+        self.tokenizer.advance()
         return
 
     def compileStatements(self):
         """
         Compiles the XML representation of statements
         """
-        self._write_open_terminal(STATEMENTS)
         # according to the curr_token, call the relevant compilation
         while re.match(self.statements_p, self.get_token()):
             if self.get_token() == "let":
@@ -392,208 +336,187 @@ class CompilationEngine:
                 self.compileDo()
             elif self.get_token() == 'return':
                 self.compileReturn()
-        self._write_close_terminal(STATEMENTS)
         return
 
     def compileDo(self):
         """
         Compiles the XML representation of a Do statement
         """
-        # write doStatement
-        self._write_open_terminal(DO)
-        # write 'do'
-        self._write_xml()
-        # write subroutine
-        self._compileSubroutineCall()
+        # advance the tokenizer to the function name
+        self.tokenizer.advance()
+        function_name = self.get_token()
+        while self.get_token() != ";":
+            self._compileSubroutineCall()
         # write ';'
-        self._write_xml()
-        self._write_close_terminal(DO)
+        self.tokenizer.advance()
         return
 
     def compileLet(self):
         """
         Compiles the XML representation of a Let statement
         """
-        # write letStatement
-        self._write_open_terminal(LET)
         # write 'let'
-        self._write_xml()
+        self.tokenizer.advance()
 
         # write varName
         name = self.get_token()
-        self._write_xml()
-        space = self.cur_indent * SPACE_AMOUNT * " "
-        self.output_file.write(space + self.symbolTable.kindOf(name) + ' ' +
-                               self.symbolTable.indexOf(name) + ' used\n')
+        self.tokenizer.advance()
 
         if self.get_token() == '[':
             # write '[ expression ]'
-            self._write_xml()
+            self.tokenizer.advance()
             self.compileExpression()
-            self._write_xml()
+            self.tokenizer.advance()
         # write '='
-        self._write_xml()
+        self.tokenizer.advance()
         # write expression
         self.compileExpression()
         # write ';'
-        self._write_xml()
-        self._write_close_terminal(LET)
+        self.tokenizer.advance()
         return
 
     def compileWhile(self):
         """
         Compiles the XML representation of a While statement
         """
-        # write whileStatement
-        self._write_open_terminal(WHILE)
         # write 'while'
-        self._write_xml()
+        self.tokenizer.advance()
         # write '('
-        self._write_xml()
+        self.tokenizer.advance()
         # write expression
         self.compileExpression()
         # write ')'
-        self._write_xml()
+        self.tokenizer.advance()
         # write {
-        self._write_xml()
+        self.tokenizer.advance()
         # write statements
         self.compileStatements()
         # write '}'
-        self._write_xml()
-        self._write_close_terminal(WHILE)
+        self.tokenizer.advance()
         return
 
     def compileReturn(self):
         """
         Compiles the XML representation of a Return statement
         """
-        # write returnStatement
-        self._write_open_terminal(RETURN)
         # write 'return'
-        self._write_xml()
+        self.tokenizer.advance()
         if self.get_token() != ';':
             # write expression
             self.compileExpression()
         # write ';'
-        self._write_xml()
-        self._write_close_terminal(RETURN)
+        self.tokenizer.advance()
         return
 
     def compileIf(self):
         """
         Compiles the XML representation of an If statement
         """
-        # write ifStatement
-        self._write_open_terminal(IF)
         # write 'if'
-        self._write_xml()
+        self.tokenizer.advance()
         # write '('
-        self._write_xml()
+        self.tokenizer.advance()
         # write expression
         self.compileExpression()
         # write ')'
-        self._write_xml()
+        self.tokenizer.advance()
         # write "{"
-        self._write_xml()
+        self.tokenizer.advance()
         # write statements
         self.compileStatements()
         # write "}"
-        self._write_xml()
+        self.tokenizer.advance()
         if self.get_token() != "else":
-            self._write_close_terminal(IF)
+#            self._write_close_terminal(IF)
             return
         # next token is else. write "else"
-        self._write_xml()
+        self.tokenizer.advance()
         # write "{"
-        self._write_xml()
+        self.tokenizer.advance()
         # write statements
         self.compileStatements()
         # write "}"
-        self._write_xml()
-        self._write_close_terminal(IF)
+        self.tokenizer.advance()
         return
 
     def compileExpression(self):
         """
         Compiles the XML representation of an expression
         """
-        # write expression
-        self._write_open_terminal(EXPRESSION)
         # write term
         self.compileTerm()
         while re.match(self.operations_p, self.get_token()):
             # write op
-            self._write_xml()
+            self.vm_writer.writeVM(OPERATION_TABLE[self.get_token()])
+            self.tokenizer.advance()
             # write term
             self.compileTerm()
-        self._write_close_terminal(EXPRESSION)
         return
 
     def compileTerm(self):
         """
         Compiles the XML representation of a term
         """
-        # write term
-        self._write_open_terminal(TERM)
         if self.get_token() == '(':
-            # write '(expression)'
-            # write '('
-            self._write_xml()
-            # write exp
-            self.compileExpression()
-            # write ')'
-            self._write_xml()
+            self.tokenizer.advance()
+            if self.get_token() == '(':
+                self.compileExpression()
+
+            self.tokenizer.advance()
         elif re.match(self.tokenizer.int_const_p, self.get_token()) or \
                 re.match(self.tokenizer.str_const_p, self.get_token()) or \
                 re.match(self.keyword_const_p, self.get_token()):
             # write integerConstant | stringConstant | keywordConstant
-            self._write_xml()
-
-        # elif re.match(self.unary_op_p, self.get_token()):
+            if self.tokenizer.tokenType() == INT_CONST:
+                self.vm_writer.writePush("constant", self.get_token())
+            #TODO: handle other constants.
+            self.tokenizer.advance()
         elif self.get_token() in ["-", "~"]:
             # write unaryOp term
-            self._write_xml()
+            self.tokenizer.advance()
             self.compileTerm()
         else:
             # write varName/subroutineName
             name = self.get_token()
+            self.tokenizer.advance()
 
-            if self.symbolTable.kindOf(name) is not None:
-                # write varName
-                self._write_xml()
-                space = self.cur_indent * SPACE_AMOUNT * " "
-                self.output_file.write(space + self.symbolTable.kindOf(name) +
-                                       ' ' + self.symbolTable.indexOf(name) +
-                                       ' used\n')
-            else:
-                # write subroutine
-                self._write_xml()
-                space = self.cur_indent * SPACE_AMOUNT * " "
-                self.output_file.write(space + 'subroutine used\n')
+            # if self.symbolTable.kindOf(name) is not None:
+            # write varName
+            # self.tokenizer.advance()
+            # space = self.cur_indent * SPACE_AMOUNT * " "
+            # self.output_file.write(space + self.symbolTable.kindOf(name) +
+            #                      ' ' + self.symbolTable.indexOf(name) +
+            #                      ' used\n')
+            # else:
+            # write subroutine
+            #   self.tokenizer.advance()
+            #  space = self.cur_indent * SPACE_AMOUNT * " "
+            # self.output_file.write(space + 'subroutine used\n')
 
             if self.get_token() == '[':
                 # write '['
-                self._write_xml()
+                self.tokenizer.advance()
                 # write exp
                 self.compileExpression()
                 # write ']'
-                self._write_xml()
+                self.tokenizer.advance()
             elif self.get_token() in '(.':
                 self._compileSubroutineCall()
-        self._write_close_terminal(TERM)
         return
 
     def compileExpressionList(self):
         """
-        Compiles the XML representation of an expressionList
+        Compiles the VM representation of an expressionList
+        This method will only be called when handling a function call
         """
-        self._write_open_terminal(EXP_LIST)
         if self.get_token() != ')':
             # write expression
             self.compileExpression()
             while self.get_token() == ',':
+                # increase the amount of arguments
+                self.arg_num += 1
                 # write ','
-                self._write_xml()
+                self.tokenizer.advance()
                 # write expression
                 self.compileExpression()
-        self._write_close_terminal(EXP_LIST)
+
