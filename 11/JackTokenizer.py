@@ -56,6 +56,7 @@ class JackTokenizer:
         """
         :return: true if there are more tokens in the input, false otherwise
         """
+
         return self._cur_i < (len(self._tokens) - 1)
 
     def advance(self):
@@ -103,14 +104,14 @@ class JackTokenizer:
         Should be called only when tokenType() is SYMBOL.
         """
         # replace symbols that are used in jack language
-        if self._cur_token == LT:
-            return "&lt;"
-        elif self._cur_token == GT:
-            return "&gt;"
-        elif self._cur_token == QUOT:
-            return "&quot;"
-        elif self._cur_token == AMP:
-            return "&amp;"
+        # if self._cur_token == LT:
+        #     return "&lt;"
+        # elif self._cur_token == GT:
+        #     return "&gt;"
+        # elif self._cur_token == QUOT:
+        #     return "&quot;"
+        # elif self._cur_token == AMP:
+        #     return "&amp;"
         return str(self._cur_token)
 
     def identifier(self):
