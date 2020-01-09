@@ -55,7 +55,7 @@ class SymbolTable:
             self._subroutine_symbols[name] = [type, kind, self._index_arg]
             self._index_arg += 1
         else: # kind == VAR
-            self._subroutine_symbols[name] = [type, kind, self._index_var]
+            self._subroutine_symbols[name] = [type, 'local', self._index_var]
             self._index_var += 1
         return
 
