@@ -1,6 +1,6 @@
 STATIC = "static"
 FIELD = "field"
-ARG = "arg"
+ARG = "argument"
 VAR = "var"
 
 S_TYPE = 0
