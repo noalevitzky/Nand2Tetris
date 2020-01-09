@@ -7,7 +7,7 @@ DECREASE = -1
 
 # print values
 CLASS = "class"
-SUBROUTINE_DEC = "subroutineDec"
+# SUBROUTINE_DEC = "subroutineDec"
 SUBROUTINE_BOD = "subroutineBody"
 IF = "ifStatement"
 WHILE = "whileStatement"
@@ -182,10 +182,10 @@ class CompilationEngine:
         """
         # reset symbol table
         self.symbolTable.startSubroutine()
-
         # write subroutine
         # self._write_open_terminal(SUBROUTINE_DEC)
         # write 'constructor' | 'function' | 'method'
+        subroutineKind = self.get_token()
         self.advance_tokenizer()
         # write 'void' | type
         self.advance_tokenizer()
@@ -199,7 +199,13 @@ class CompilationEngine:
         self.compileParameterList()
         # write ")"
         self.advance_tokenizer()
-        self.vm_writer.writeFunction(func_name, self.arg_num)
+
+        # write subroutine dec
+        numArgs = self.arg_num
+        if subroutineKind == 'method':
+            numArgs += 1
+        self.vm_writer.writeFunction(func_name, numArgs)
+
         # write subroutineBody
         self.compileSubroutineBody()
 
@@ -273,7 +279,6 @@ class CompilationEngine:
         self.advance_tokenizer()
 
         self.symbolTable.define(name, myType, kind)
-        print(self.symbolTable._subroutine_symbols)
         while self.get_token() == ',':
             # write ','
             self.advance_tokenizer()
