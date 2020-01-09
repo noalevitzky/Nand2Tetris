@@ -2,7 +2,7 @@ SPACE = " "
 
 class VMWriter:
 
-    def __init__(self,output_file):
+    def __init__(self, output_file):
         """
         Creates a new VMWriter object and prepares to write to a given file
         :param output_file: The file to write to the VM code
