@@ -49,14 +49,15 @@ class SymbolTable:
             self._class_symbols[name] = [type, kind, self._index_static]
             self._index_static += 1
         elif kind == FIELD:
-            self._class_symbols[name] = [type, kind, self._index_field]
+            self._class_symbols[name] = [type, 'this', self._index_field]
             self._index_field += 1
         elif kind == ARG:
             self._subroutine_symbols[name] = [type, kind, self._index_arg]
             self._index_arg += 1
-        else: # kind == VAR
+        elif kind == VAR:
             self._subroutine_symbols[name] = [type, 'local', self._index_var]
             self._index_var += 1
+        # print(self._subroutine_symbols)
         return
 
     def varCount(self, kind):
