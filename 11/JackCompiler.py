@@ -18,7 +18,7 @@ if __name__ == '__main__':
                 # edit outfile name
                 outfile = source + '/' + name + '.vm'
                 # create VMWriter
-                vmWriter = Vw.Vm(outfile)
+                vmWriter = Vw.VMWriter(outfile)
                 # create tokenizer
                 tokenizer = Jt.JackTokenizer(source + '/' + filename)
                 # compile
@@ -27,7 +27,7 @@ if __name__ == '__main__':
         # source is a single file, compile it
         outfile = source.replace('.jack', '.vm')
         # create VMWriter
-        vmWriter = Vw.Vm(outfile)
+        vmWriter = Vw.VMWriter(outfile)
         # create tokenizer
         tokenizer = Jt.JackTokenizer(source)
         Ce.CompilationEngine(tokenizer, vmWriter)
