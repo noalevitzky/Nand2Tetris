@@ -51,30 +51,53 @@ class CompilationEngine:
         """
         Compiles the VM representation of a subroutineCall
         """
-        # Check if this method belongs to another class)
-        first_string = self.get_token()
+        firstToken = self.get_token()
         self.advance_tokenizer()
-        # If the function call is func()
-        if self.get_token() == "(":
-            func_name = first_string
-            func_call_name = self.class_name + "." + func_name
-        # If the function call is class.func()
+        # self.vm_writer.writePush('pointer', 0)
+
+        # firstToken is var name
+        if self.symbolTable.kindOf(firstToken) is not None:
+            secondToken = self.get_token()
+            if secondToken == '[':
+                self.advance_tokenizer()
+                self.compileExpression()
+                self.advance_tokenizer()
+                # todo push address of secondToken[expression] to stack
+                # todo write pop to that segement
+
+            elif secondToken == '.':
+                self.vm_writer.writePush(self.symbolTable.kindOf(firstToken),
+                                         self.symbolTable.indexOf(firstToken))
+                self.advance_tokenizer()
+                funcName = self.symbolTable.typeOf(firstToken) + '.' + self.get_token()
+                self.advance_tokenizer()
+                self.compileExpressionList()
+                self.vm_writer.writeCall(funcName, self.arg_num)
+
+            else:
+                # simply varName
+                self.vm_writer.writePush('pointer', 0)
+                self.advance_tokenizer()
+
+        # firstToken is subroutine or class Name
         else:
-            # current token is "."
-            class_name = first_string
-            self.advance_tokenizer()
-            func_name = self.get_token()
-            self.advance_tokenizer()
-            func_call_name = class_name + "." + func_name
-        # advance current token beyond "("
-        self.advance_tokenizer()
-        if self.get_token() != ")":
-            # Now the current token is the beginning of the arguments list
-            # Todo: Modify compileExpressionList to update the self.arg_num
-            # Todo: Make sure the CompileExpressionList pushes the arguments for the function call
-            self.compileExpressionList()
-        self.vm_writer.writeCall(func_call_name, self.arg_num)
-        return
+            if self.get_token() == '.':
+                # term is className.sub()
+                # self.vm_writer.writePush('pointer', 0)
+                self.advance_tokenizer()
+                funcName = firstToken + '.' + str(self.get_token())
+                self.advance_tokenizer()
+                self.compileExpressionList()
+                self.vm_writer.writeCall(funcName, self.arg_num)
+
+            elif self.get_token() == '(':
+                # term is subroutine
+                funcName = self.class_name + '.' + firstToken
+                self.advance_tokenizer()
+                self.compileExpressionList()
+                self.vm_writer.writePush('pointer', 0)
+                self.vm_writer.writeCall(funcName, self.arg_num)
+
 
     #  ___________ API METHODS _____________ #
     def __init__(self, tokenizer, VMWriter):
@@ -84,8 +107,8 @@ class CompilationEngine:
         self.symbolTable = SymbolTable.SymbolTable()
         self.class_name = ""
         self.arg_num = 0
-        self._while_counter = 0
-        self._if_counter = 0
+        self._while_counter = -1
+        self._if_counter = -1
 
         # compile based on tokenizer, to output_file
         self.compileClass()
@@ -185,33 +208,43 @@ class CompilationEngine:
         """
         # reset
         self.symbolTable.startSubroutine()
-        self._while_counter = 0
-        self._if_counter = 0
+        self._while_counter = -1
+        self._if_counter = -1
 
         # 'constructor' | 'function' | 'method'
         subroutineKind = self.get_token()
         self.advance_tokenizer()
 
-        # write 'void' | type
+        # advance type
         self.advance_tokenizer()
 
-        # write subroutineName
+        # get subroutineName and advance
         func_name = self.class_name + "." + self.get_token()
         self.advance_tokenizer()
-        # write "("
         self.advance_tokenizer()
-        # write parameterList
         self.compileParameterList()
-        # write ")"
         self.advance_tokenizer()
 
         # write subroutine dec
         numArgs = self.arg_num
+
         if subroutineKind == 'method':
             numArgs += 1
-        self.vm_writer.writeFunction(func_name, numArgs)
+            self.vm_writer.writePush('pointer', 0)
+            self.symbolTable.define('this', self.class_name, 'argument')
+            self.vm_writer.writeFunction(func_name, numArgs)
+            self.vm_writer.writePush('argument', 0)
+            self.vm_writer.writePop('pointer', 0)
 
-        # write subroutineBody
+        elif subroutineKind == 'constructor':
+            self.vm_writer.writeFunction(func_name, numArgs)
+            self.vm_writer.writePush('constant', numArgs)
+            self.vm_writer.writeCall('Memory.alloc', 1)
+            self.vm_writer.writePop('pointer', 0)
+
+        else:
+            self.vm_writer.writeFunction(func_name, numArgs)
+
         self.compileSubroutineBody()
         return
 
@@ -255,7 +288,7 @@ class CompilationEngine:
         """
         # write "{"
         self.advance_tokenizer()
-        while self.get_token() == "var":
+        while self.get_token() == 'var':
             # write varDec
             self.compileVarDec()
 
@@ -269,7 +302,6 @@ class CompilationEngine:
         """
         Compiles the XML representation of variableDeclaration
         """
-
         # write 'var'
         kind = self.get_token()
         self.advance_tokenizer()
@@ -319,10 +351,8 @@ class CompilationEngine:
         """
         # advance the tokenizer to the function name
         self.advance_tokenizer()
-        function_name = self.get_token()
-        while self.get_token() != ";":
-            # todo get it right with first token
-            self._compileSubroutineCall()
+        self._compileSubroutineCall()
+
         # write ';'
         self.advance_tokenizer()
         self.vm_writer.writePop("temp", 0)
@@ -359,6 +389,8 @@ class CompilationEngine:
         """
         Compiles the XML representation of a While statement
         """
+        # advance while index
+        self._while_counter += 1
         self.vm_writer.writeLabel("WHILE_EXP" + str(self._while_counter))
 
         # while condition
@@ -380,8 +412,7 @@ class CompilationEngine:
         self.vm_writer.writeGoto("WHILE_EXP" + str(self._while_counter))
         self.vm_writer.writeLabel('WHILE_END' + str(self._while_counter))
 
-        # advance while index
-        self._while_counter += 1
+        self._while_counter -= 1
         return
 
     def compileReturn(self):
@@ -401,6 +432,8 @@ class CompilationEngine:
         """
         Compiles the XML representation of an If statement
         """
+        self._if_counter += 1
+
         # compile if condition
         self.advance_tokenizer()
         self.advance_tokenizer()
@@ -427,7 +460,7 @@ class CompilationEngine:
 
         # advance index
         self.vm_writer.writeLabel('IF_END' + str(self._if_counter))
-        self._if_counter += 1
+        self._if_counter -= 1
         return
 
     def compileExpression(self):
@@ -453,8 +486,7 @@ class CompilationEngine:
             pass
             # todo push null
         elif key == 'this':
-            pass
-            # todo push this
+            self.vm_writer.writePush('pointer', 0)
         return
 
     def compileTerm(self):
@@ -526,8 +558,8 @@ class CompilationEngine:
                     self.advance_tokenizer()
                     self.compileExpressionList()
                     self.vm_writer.writeCall(funcName, self.arg_num)
-
-                else: # self.get_token == '('
+                elif self.get_token() == '(':
+                    # term is subroutine
                     funcName = self.class_name + '.' + firstToken
                     self.advance_tokenizer()
                     self.compileExpressionList()
