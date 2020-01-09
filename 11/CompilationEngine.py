@@ -28,7 +28,10 @@ SYMBOL = "symbol"
 IDENTIFIER = "identifier"
 INT_CONST = "integerConstant"
 STRING_CONST = "stringConstant"
-OPERATION_TABLE = {"+":"add", "-":"sub", "=":"eq", ">":"gt", "<":"lt", "|":"or", "&":"and", "/":"call Math.divide 2", "*":"call Math.multiply 2"}
+OPERATION_TABLE = {"+": "add", "-": "sub", "=": "eq", ">": "gt", "<": "lt",
+                   "|": "or", "&": "and", "/": "call Math.divide 2",
+                   "*": "call Math.multiply 2"}
+UNARY_TABLE = {'-': 'neg', '~': 'not'}  # todo is ~ == not?
 
 
 class CompilationEngine:
@@ -66,9 +69,9 @@ class CompilationEngine:
         # advance current token beyond "("
         self.advance_tokenizer()
         if self.get_token() != ")":
-        # Now the current token is the beginning of the arguments list
-        # Todo: Modify compileExpressionList to update the self.arg_num
-        # Todo: Make sure the CompileExpressionList pushes the arguments for the function call
+            # Now the current token is the beginning of the arguments list
+            # Todo: Modify compileExpressionList to update the self.arg_num
+            # Todo: Make sure the CompileExpressionList pushes the arguments for the function call
             self.compileExpressionList()
         self.vm_writer.writeCall(func_call_name, self.arg_num)
         return
@@ -81,9 +84,11 @@ class CompilationEngine:
         self.symbolTable = SymbolTable.SymbolTable()
         self.class_name = ""
         self.arg_num = 0
+        self._while_counter = 0
+        self._if_counter = 0
+
         # compile based on tokenizer, to output_file
         self.compileClass()
-
 
     def advance_tokenizer(self):
         if self.tokenizer.hasMoreTokens():
@@ -112,11 +117,9 @@ class CompilationEngine:
         while self.get_token() in 'static|field':
             self.compileClassVarDec()
 
-
         # Write Subroutines until the end of the class
         while self.get_token() != "}":
             self.compileSubroutine()
-
 
         # advance to '}'
         self.advance_tokenizer()
@@ -180,13 +183,15 @@ class CompilationEngine:
         """
         Compiles the VM representation of a subroutine
         """
-        # reset symbol table
+        # reset
         self.symbolTable.startSubroutine()
-        # write subroutine
-        # self._write_open_terminal(SUBROUTINE_DEC)
-        # write 'constructor' | 'function' | 'method'
+        self._while_counter = 0
+        self._if_counter = 0
+
+        # 'constructor' | 'function' | 'method'
         subroutineKind = self.get_token()
         self.advance_tokenizer()
+
         # write 'void' | type
         self.advance_tokenizer()
 
@@ -208,14 +213,14 @@ class CompilationEngine:
 
         # write subroutineBody
         self.compileSubroutineBody()
-
-
         return
 
     def compileParameterList(self):
         """
         Compiles the XML representation of parameterList
         """
+        self.arg_num = 0
+
         kind = 'argument'
         if self.get_token() != ')':
             self.arg_num += 1
@@ -227,7 +232,6 @@ class CompilationEngine:
             name = self.get_token()
             self.advance_tokenizer()
             self.symbolTable.define(name, myType, kind)
-
 
             while self.get_token() == ',':
                 # write ','
@@ -317,6 +321,7 @@ class CompilationEngine:
         self.advance_tokenizer()
         function_name = self.get_token()
         while self.get_token() != ";":
+            # todo get it right with first token
             self._compileSubroutineCall()
         # write ';'
         self.advance_tokenizer()
@@ -345,42 +350,49 @@ class CompilationEngine:
         self.compileExpression()
         # write ';'
         self.advance_tokenizer()
+
+        self.vm_writer.writePop(self.symbolTable.kindOf(name),
+                                self.symbolTable.indexOf(name))
         return
 
     def compileWhile(self):
         """
         Compiles the XML representation of a While statement
         """
-        self.vm_writer.writeLabel("loop")
-        # write 'while'
+        self.vm_writer.writeLabel("WHILE_EXP" + str(self._while_counter))
+
+        # while condition
         self.advance_tokenizer()
-        # write '('
         self.advance_tokenizer()
-        # write expression
         self.compileExpression()
-        # write ')'
         self.advance_tokenizer()
-        # write {
+
+        # if-goto
+        self.vm_writer.writeVM('not')
+        self.vm_writer.writeIf('WHILE_END' + str(self._while_counter))
+
+        # while body
         self.advance_tokenizer()
-        # write statements
         self.compileStatements()
-        # write '}'
         self.advance_tokenizer()
+
+        # goto
+        self.vm_writer.writeGoto("WHILE_EXP" + str(self._while_counter))
+        self.vm_writer.writeLabel('WHILE_END' + str(self._while_counter))
+
+        # advance while index
+        self._while_counter += 1
         return
 
     def compileReturn(self):
         """
         Compiles the XML representation of a Return statement
         """
-        # write 'return'
         self.advance_tokenizer()
-
         if self.get_token() == ';':
             self.vm_writer.writePush("constant", 0)
         else:
-            # write expression
             self.compileExpression()
-        # write ';'
         self.advance_tokenizer()
         self.vm_writer.writeVM("return")
         return
@@ -389,31 +401,33 @@ class CompilationEngine:
         """
         Compiles the XML representation of an If statement
         """
-        # write 'if'
+        # compile if condition
         self.advance_tokenizer()
-        # write '('
         self.advance_tokenizer()
-        # write expression
         self.compileExpression()
-        # write ')'
         self.advance_tokenizer()
-        # write "{"
+
+        # if goto and else
+        self.vm_writer.writeIf('IF_TRUE' + str(self._if_counter))
+        self.vm_writer.writeGoto('IF_FALSE' + str(self._if_counter))
+
+        # if true
+        self.vm_writer.writeLabel('IF_TRUE' + str(self._if_counter))
         self.advance_tokenizer()
-        # write statements
         self.compileStatements()
-        # write "}"
         self.advance_tokenizer()
-        if self.get_token() != "else":
-#            self._write_close_terminal(IF)
-            return
-        # next token is else. write "else"
+        self.vm_writer.writeGoto('IF_END' + str(self._if_counter))
+
+        # else. if false
+        self.vm_writer.writeLabel('IF_FALSE' + str(self._if_counter))
         self.advance_tokenizer()
-        # write "{"
         self.advance_tokenizer()
-        # write statements
         self.compileStatements()
-        # write "}"
         self.advance_tokenizer()
+
+        # advance index
+        self.vm_writer.writeLabel('IF_END' + str(self._if_counter))
+        self._if_counter += 1
         return
 
     def compileExpression(self):
@@ -423,77 +437,118 @@ class CompilationEngine:
         # write term
         self.compileTerm()
         while re.match(self.operations_p, self.get_token()):
-            # save current op
             current_operation = (OPERATION_TABLE[self.get_token()])
             self.advance_tokenizer()
-            # write term
             self.compileTerm()
             self.vm_writer.writeVM(current_operation)
+        return
+
+    def _pushKeyword(self, key):
+        if key == 'true':
+            self.vm_writer.writePush('constant', 0)
+            self.vm_writer.writeVM('not')
+        elif key == 'false':
+            self.vm_writer.writePush('constant', 0)
+        elif key == 'null':
+            pass
+            # todo push null
+        elif key == 'this':
+            pass
+            # todo push this
         return
 
     def compileTerm(self):
         """
         Compiles the XML representation of a term
         """
-        if self.get_token() == '(':
+        term = self.get_token()
+
+        # term  is (expression)
+        if term == '(':
             self.advance_tokenizer()
             self.compileExpression()
             self.advance_tokenizer()
-        elif re.match(self.tokenizer.int_const_p, self.get_token()) or \
-                re.match(self.tokenizer.str_const_p, self.get_token()) or \
-                re.match(self.keyword_const_p, self.get_token()):
-            # write integerConstant | stringConstant | keywordConstant
-            if self.tokenizer.tokenType() == INT_CONST:
-                self.vm_writer.writePush("constant", self.get_token())
-            #TODO: handle other constants.
+
+        # term is int
+        elif re.match(self.tokenizer.int_const_p, term):
+            self.vm_writer.writePush("constant", term)
             self.advance_tokenizer()
+
+        # term is string
+        elif re.match(self.tokenizer.str_const_p, term):
+            # todo push string
+            self.advance_tokenizer()
+
+        # term is keyword
+        elif re.match(self.keyword_const_p, term):
+            self._pushKeyword(term)
+            self.advance_tokenizer()
+
         elif self.get_token() in ["-", "~"]:
-            # write unaryOp term
+            unaryOp = term
             self.advance_tokenizer()
             self.compileTerm()
+            # write unaryOp term
+            self.vm_writer.writeVM(UNARY_TABLE[unaryOp])
+
         else:
-            # write varName/subroutineName
-            name = self.get_token()
+            firstToken = self.get_token()
             self.advance_tokenizer()
 
-            # if self.symbolTable.kindOf(name) is not None:
-            # write varName
-            # self.advance_tokenizer()()
-            # space = self.cur_indent * SPACE_AMOUNT * " "
-            # self.output_file.write(space + self.symbolTable.kindOf(name) +
-            #                      ' ' + self.symbolTable.indexOf(name) +
-            #                      ' used\n')
-            # else:
-            # write subroutine
-            #   self.advance_tokenizer()()
-            #  space = self.cur_indent * SPACE_AMOUNT * " "
-            # self.output_file.write(space + 'subroutine used\n')
+            # firstToken is var name
+            if self.symbolTable.kindOf(firstToken) is not None:
+                secondToken = self.get_token()
+                if secondToken == '[':
+                    self.advance_tokenizer()
+                    self.compileExpression()
+                    self.advance_tokenizer()
+                    # todo push address of secondToken[expression] to stack
+                    # todo write pop to that segement
 
-            if self.get_token() == '[':
-                # write '['
-                self.advance_tokenizer()
-                # write exp
-                self.compileExpression()
-                # write ']'
-                self.advance_tokenizer()
-            elif self.get_token() in '(.':
-                self._compileSubroutineCall()
-        return
+                elif secondToken == '.':
+                    self.advance_tokenizer()
+                    funcName = firstToken + '.' + self.get_token()
+                    self.advance_tokenizer()
+                    self.compileExpressionList()
+                    self.vm_writer.writeCall(funcName, self.arg_num)
+
+                else:
+                    # simply varName
+                    self.vm_writer.writePush(self.symbolTable.kindOf(term),
+                                             self.symbolTable.indexOf(term))
+
+            # firstToken is subroutine or class Name
+            else:
+                if self.get_token() == '.':
+                    # term is className.sub()
+                    self.advance_tokenizer()
+                    funcName = firstToken + '.' + self.get_token()
+                    self.advance_tokenizer()
+                    self.compileExpressionList()
+                    self.vm_writer.writeCall(funcName, self.arg_num)
+
+                else: # self.get_token == '('
+                    funcName = self.class_name + '.' + firstToken
+                    self.advance_tokenizer()
+                    self.compileExpressionList()
+                    self.vm_writer.writeCall(funcName, self.arg_num)
 
     def compileExpressionList(self):
         """
         Compiles the VM representation of an expressionList
         This method will only be called when handling a function call
         """
+        self.arg_num = 0
+        if self.get_token() == '(':
+            self.advance_tokenizer()
+
         if self.get_token() != ')':
-            # write expression
             self.compileExpression()
             while self.get_token() == ',':
-                # increase the amount of arguments
                 self.arg_num += 1
-                # write ','
                 self.advance_tokenizer()
-                # write expression
                 self.compileExpression()
+
         self.arg_num += 1
         self.advance_tokenizer()
+        return
