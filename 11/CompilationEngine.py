@@ -281,6 +281,8 @@ class CompilationEngine:
         """
         # arg[0] == this
         self.advance_tokenizer()
+        if self._cur_subroutine_kind == 'method':
+            self.symbolTable.define('this', self.class_name, 'argument')
         while self.get_token() == 'var':
             # Increase the amount of function local variables
             self.compileVarDec()
@@ -295,7 +297,6 @@ class CompilationEngine:
         if self._cur_subroutine_kind == 'method':
             self.vm_writer.writeFunction(self._cur_subroutine_name,
                                          self.symbolTable.varCount('local'))
-            self.symbolTable.define('this', self.class_name, 'argument')
             self.vm_writer.writePush(self.symbolTable.kindOf('this'),
                                      self.symbolTable.indexOf('this'))
             self.vm_writer.writePop('pointer', 0)
