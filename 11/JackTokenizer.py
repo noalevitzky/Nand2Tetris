@@ -14,13 +14,14 @@ STRING_CONST = "stringConstant"
 
 class JackTokenizer:
     # jack lexical elements
+    spaces = '^\s*$'
     keywords = "class|constructor|function|method|field|static|var|" \
                "int|char|boolean|void|true|false|null|this|let|do|" \
                "if|else|while|return"
-    symbols = '{|}|\(|\)|\[|]|\.|,|;|\+|-|\*|/|&|\||<|>|=|~'
+    symbols = '\{|\}|\(|\)|\[|\]|\.|,|;|\+|-|\*|/|&|\||\<|\>|=|~'
     identifiers = '[a-zA-Z_]{1}[a-zA-Z_\d]*'
     int_const = '[\d]+'
-    str_const = '\"[^\r\n]+\"'
+    str_const = '"[^"]*"'
     all_tokens = keywords + '|' + symbols + '|' + identifiers + '|' + \
                  int_const + '|' + str_const
     comments = '//[^\n]*\n|/\*(.|\n)*?\*/'
@@ -32,6 +33,7 @@ class JackTokenizer:
     str_const_p = re.compile(str_const)
     all_tokens_p = re.compile(all_tokens)
     comments_p = re.compile(comments)
+    split_p = '(' + symbols + '|' + str_const + ')|\s+'
 
     def __init__(self, input_file):
         self._tokens = []
@@ -48,8 +50,12 @@ class JackTokenizer:
         with open(input_file, 'r') as f:
             # remove comments from text
             content = re.sub(self.comments_p, ' ', f.read())
-        # create an array of all tokens
-        self._tokens = re.findall(self.all_tokens_p, content)
+
+        splitted = re.split(self.split_p, content)
+        for word in splitted:
+            if word is not None and not re.match(self.spaces, word):
+                if re.match(self.all_tokens_p, word):
+                    self._tokens.append(word)
         return
 
     def hasMoreTokens(self):
