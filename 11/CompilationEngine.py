@@ -7,7 +7,6 @@ DECREASE = -1
 
 # print values
 CLASS = "class"
-# SUBROUTINE_DEC = "subroutineDec"
 SUBROUTINE_BOD = "subroutineBody"
 IF = "ifStatement"
 WHILE = "whileStatement"
@@ -51,6 +50,7 @@ class CompilationEngine:
         """
         Compiles the VM representation of a subroutineCall
         """
+        # self.arg_num = 0
         firstToken = self.get_token()
         self.advance_tokenizer()
 
@@ -67,7 +67,7 @@ class CompilationEngine:
                 # push var to stuck, so var.foo could be called
                 self.vm_writer.writePush(self.symbolTable.kindOf(firstToken),
                                          self.symbolTable.indexOf(firstToken))
-                self.arg_num += 1
+                # self.arg_num += 1
 
                 self.advance_tokenizer()
                 funcName = self.symbolTable.typeOf(
@@ -75,11 +75,11 @@ class CompilationEngine:
                 self.advance_tokenizer()
                 self.compileExpressionList()
                 self.vm_writer.writeCall(funcName, self.arg_num)
-
+                self.arg_num = 0
             else:
                 # simply varName
                 self.vm_writer.writePush('pointer', 0)
-                self.arg_num += 1
+                # self.arg_num += 1
                 self.advance_tokenizer()
 
         # firstToken is subroutine or class Name
@@ -93,18 +93,20 @@ class CompilationEngine:
                     self.symbolTable.define('this', self.class_name,
                                             'argument')
                     self.vm_writer.writePush('pointer', 0)
-                    self.arg_num += 1
+                    # self.arg_num += 1
                 self.compileExpressionList()
                 self.vm_writer.writeCall(funcName, self.arg_num)
+                self.arg_num = 0
 
             elif self.get_token() == '(':
                 # term is subroutine
                 funcName = self.class_name + '.' + firstToken
                 self.advance_tokenizer()
                 self.vm_writer.writePush('pointer', 0)
-                self.arg_num += 1
+                # self.arg_num += 1
                 self.compileExpressionList()
                 self.vm_writer.writeCall(funcName, self.arg_num)
+                self.arg_num = 0
 
         # reset arg_num for following functions
         self.arg_num = 0
@@ -184,7 +186,7 @@ class CompilationEngine:
         Compiles the XML representation of class variables declaration
         """
         # count the first variable
-        self._var_num += 1
+        # self._var_num += 1
         # write 'static'|'field'
         kind = self.get_token()
         self.advance_tokenizer()
@@ -199,7 +201,7 @@ class CompilationEngine:
         self.advance_tokenizer()
         self.symbolTable.define(name, myType, kind)
         while self.get_token() == ',':
-            self._var_num += 1
+            # self._var_num += 1
             self.advance_tokenizer()
             # define varName
             name = self.get_token()
@@ -248,7 +250,7 @@ class CompilationEngine:
 
         kind = 'argument'
         if self.get_token() != ')':
-            self.arg_num += 1
+            # self.arg_num += 1
             # write type
             myType = self.get_token()
             self.advance_tokenizer()
@@ -260,7 +262,7 @@ class CompilationEngine:
 
             while self.get_token() == ',':
                 # write ','
-                self.arg_num += 1
+                # self.arg_num += 1
                 self.advance_tokenizer()
 
                 # write type
@@ -293,7 +295,9 @@ class CompilationEngine:
         if self._cur_subroutine_kind == 'method':
             self.vm_writer.writeFunction(self._cur_subroutine_name,
                                          self.symbolTable.varCount('local'))
-            self.vm_writer.writePush('argument', 0)
+            self.symbolTable.define('this', self.class_name, 'argument')
+            self.vm_writer.writePush(self.symbolTable.kindOf('this'),
+                                     self.symbolTable.indexOf('this'))
             self.vm_writer.writePop('pointer', 0)
         elif self._cur_subroutine_kind == 'constructor':
             self.vm_writer.writeFunction(self._cur_subroutine_name, 0)
@@ -313,7 +317,7 @@ class CompilationEngine:
         """
         Compiles the XML representation of variableDeclaration
         """
-        self._var_num += 1
+        # self._var_num += 1
 
         kind = self.get_token()
         self.advance_tokenizer()
@@ -326,7 +330,7 @@ class CompilationEngine:
         self.symbolTable.define(name, myType, kind)
 
         while self.get_token() == ',':
-            self._var_num += 1
+            # self._var_num += 1
             self.advance_tokenizer()
             # write varName
             name = self.get_token()
@@ -384,7 +388,8 @@ class CompilationEngine:
             # write '[ expression ]'
             self.advance_tokenizer()
             self.compileExpression()
-            self.vm_writer.writePush("local", str(self.symbolTable.indexOf(name)))
+            self.vm_writer.writePush(self.symbolTable.kindOf(name),
+                                     str(self.symbolTable.indexOf(name)))
             self.vm_writer.writeVM("add")
             self.advance_tokenizer()
             self._handling_array = True
@@ -500,8 +505,7 @@ class CompilationEngine:
         elif key == 'false':
             self.vm_writer.writePush('constant', 0)
         elif key == 'null':
-            pass
-            # todo push null
+            self.vm_writer.writePush('constant', 0)
         elif key == 'this':
             self.vm_writer.writePush('pointer', 0)
         return
@@ -556,7 +560,6 @@ class CompilationEngine:
                     self.advance_tokenizer()
                     self.vm_writer.writeVM("add")
                     # add the value to the array
-                    # TODO: A bit clunky implementation, needs to be imporved
                     self.vm_writer.writePop("pointer", 1)
                     self.vm_writer.writePush("that", 0)
                 elif secondToken == '.':
@@ -566,9 +569,10 @@ class CompilationEngine:
                     self.compileExpressionList()
                     self.vm_writer.writePush(self.symbolTable.kindOf(firstToken),
                                              self.symbolTable.indexOf(firstToken))
-                    self.arg_num += 1
+                    # self.arg_num += 1
                     self.vm_writer.writeCall(funcName, self.arg_num)
                     self.arg_num = 0
+
                 else:
                     # simply varName
                     self.vm_writer.writePush(self.symbolTable.kindOf(term),
@@ -618,9 +622,9 @@ class CompilationEngine:
             self.advance_tokenizer()
 
         if self.get_token() != ')':
-
             self.arg_num += 1
             self.compileExpression()
+
             while self.get_token() == ',':
                 self.advance_tokenizer()
                 self.arg_num += 1
