@@ -86,26 +86,24 @@ class CompilationEngine:
         else:
             if self.get_token() == '.':
                 # term is className.sub()
-                # self.vm_writer.writePush('pointer', 0)
-                # self.arg_num += 1
                 self.advance_tokenizer()
                 funcName = firstToken + '.' + str(self.get_token())
                 self.advance_tokenizer()
-                self.compileExpressionList()
                 if self.symbolTable.kindOf(firstToken) == 'method':
                     self.symbolTable.define('this', self.class_name,
                                             'argument')
                     self.vm_writer.writePush('pointer', 0)
                     self.arg_num += 1
+                self.compileExpressionList()
                 self.vm_writer.writeCall(funcName, self.arg_num)
 
             elif self.get_token() == '(':
                 # term is subroutine
                 funcName = self.class_name + '.' + firstToken
                 self.advance_tokenizer()
-                self.compileExpressionList()
                 self.vm_writer.writePush('pointer', 0)
                 self.arg_num += 1
+                self.compileExpressionList()
                 self.vm_writer.writeCall(funcName, self.arg_num)
 
         # reset arg_num for following functions
@@ -200,7 +198,6 @@ class CompilationEngine:
         name = self.get_token()
         self.advance_tokenizer()
         self.symbolTable.define(name, myType, kind)
-
         while self.get_token() == ',':
             self._var_num += 1
             self.advance_tokenizer()
@@ -289,24 +286,26 @@ class CompilationEngine:
         self.compileStatements()
         # write "}" after the last statement (end of method body)
         self.advance_tokenizer()
-        #reset arg_num
         return
 
     def write_subroutine_dec(self):
         # write subroutine dec
         if self._cur_subroutine_kind == 'method':
             self.vm_writer.writeFunction(self._cur_subroutine_name,
-                                         self._var_num)
+                                         self.symbolTable.varCount('local'))
             self.vm_writer.writePush('argument', 0)
             self.vm_writer.writePop('pointer', 0)
         elif self._cur_subroutine_kind == 'constructor':
             self.vm_writer.writeFunction(self._cur_subroutine_name, 0)
-            self.vm_writer.writePush('constant', self._var_num)
+            self.vm_writer.writePush('constant',
+                                     self.symbolTable.varCount('local') +
+                                     self.symbolTable.varCount('field'))
             self.vm_writer.writeCall('Memory.alloc', 1)
             self.vm_writer.writePop('pointer', 0)
         else:
+            # subroutine is a function
             self.vm_writer.writeFunction(self._cur_subroutine_name,
-                                         self._var_num)
+                                         self.symbolTable.varCount('local'))
         # reset var_num after subroutine declaration
         self._var_num = 0
 
@@ -455,28 +454,29 @@ class CompilationEngine:
         Compiles the XML representation of an If statement
         """
         self._if_counter += 1
+        cur_if_counter = self._if_counter
         # compile if condition
         self.advance_tokenizer()
         self.advance_tokenizer()
         self.compileExpression()
         self.advance_tokenizer()
         # if goto and else
-        self.vm_writer.writeIf('IF_TRUE' + str(self._if_counter))
-        self.vm_writer.writeGoto('IF_FALSE' + str(self._if_counter))
+        self.vm_writer.writeIf('IF_TRUE' + str(cur_if_counter))
+        self.vm_writer.writeGoto('IF_FALSE' + str(cur_if_counter))
         # if true
-        self.vm_writer.writeLabel('IF_TRUE' + str(self._if_counter))
+        self.vm_writer.writeLabel('IF_TRUE' + str(cur_if_counter))
         self.advance_tokenizer()
         self.compileStatements()
         self.advance_tokenizer()
-        self.vm_writer.writeGoto('IF_END' + str(self._if_counter))
-        self.vm_writer.writeLabel('IF_FALSE' + str(self._if_counter))
+        self.vm_writer.writeGoto('IF_END' + str(cur_if_counter))
+        self.vm_writer.writeLabel('IF_FALSE' + str(cur_if_counter))
         # else. if false
         if self.get_token() == 'else':
             self.advance_tokenizer()
             self.advance_tokenizer()
             self.compileStatements()
             self.advance_tokenizer()
-        self.vm_writer.writeLabel('IF_END' + str(self._if_counter))
+        self.vm_writer.writeLabel('IF_END' + str(cur_if_counter))
         return
 
     def compileExpression(self):
@@ -549,22 +549,24 @@ class CompilationEngine:
             if self.symbolTable.kindOf(firstToken) is not None:
                 secondToken = self.get_token()
                 if secondToken == '[':
-                   # write '[ expression ]'
-                   self.advance_tokenizer()
-                   self.compileExpression()
-                   self.vm_writer.writePush("local", str(self.symbolTable.indexOf(firstToken)))
-                   self.advance_tokenizer()
-                   self.vm_writer.writeVM("add")
-                   # add the value to the array
-                   #TODO: A bit clunky implementation, needs to be imporved
-                   self.vm_writer.writePop("pointer", 1)
-                   self.vm_writer.writePush("that", 0)
+                    # write '[ expression ]'
+                    self.advance_tokenizer()
+                    self.compileExpression()
+                    self.vm_writer.writePush("local", str(self.symbolTable.indexOf(firstToken)))
+                    self.advance_tokenizer()
+                    self.vm_writer.writeVM("add")
+                    # add the value to the array
+                    # TODO: A bit clunky implementation, needs to be imporved
+                    self.vm_writer.writePop("pointer", 1)
+                    self.vm_writer.writePush("that", 0)
                 elif secondToken == '.':
                     self.advance_tokenizer()
-                    funcName = firstToken + '.' + self.get_token()
-
+                    funcName = self.symbolTable.typeOf(firstToken) + '.' + self.get_token()
                     self.advance_tokenizer()
                     self.compileExpressionList()
+                    self.vm_writer.writePush(self.symbolTable.kindOf(firstToken),
+                                             self.symbolTable.indexOf(firstToken))
+                    self.arg_num += 1
                     self.vm_writer.writeCall(funcName, self.arg_num)
                     self.arg_num = 0
                 else:
@@ -606,9 +608,6 @@ class CompilationEngine:
             self.vm_writer.writePush("constant", char_ascii)
             self.vm_writer.writeCall("String.appendChar", 2)
         return
-
-
-
 
     def compileExpressionList(self):
         """
