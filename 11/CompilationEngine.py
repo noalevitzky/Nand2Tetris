@@ -153,6 +153,7 @@ class CompilationEngine:
         # Write classVarDec until subroutine declaration
         # TODO: I think this is useless in project 11
         while self.get_token() in 'static|field':
+            #Todo: Use the symboltable's varcount to get the amount of variables
             self.compileClassVarDec()
 
         # Write Subroutines until the end of the class
@@ -224,6 +225,9 @@ class CompilationEngine:
 
         # 'constructor' | 'function' | 'method'
         self._cur_subroutine_kind = self.get_token()
+        if self._cur_subroutine_kind == "method":
+            self.symbolTable.define('this', self.class_name,
+                                    'argument')
         self.advance_tokenizer()
         self.advance_tokenizer()
 
@@ -276,7 +280,7 @@ class CompilationEngine:
         """
         Compiles the XML representation of a subroutineBody
         """
-        # write "{"
+        # arg[0] == this
         self.advance_tokenizer()
         while self.get_token() == 'var':
             # Increase the amount of function local variables
@@ -285,6 +289,7 @@ class CompilationEngine:
         self.compileStatements()
         # write "}" after the last statement (end of method body)
         self.advance_tokenizer()
+        #reset arg_num
         return
 
     def write_subroutine_dec(self):
@@ -463,6 +468,7 @@ class CompilationEngine:
         self.advance_tokenizer()
         self.compileStatements()
         self.advance_tokenizer()
+        self.vm_writer.writeGoto('IF_END' + str(self._if_counter))
         self.vm_writer.writeLabel('IF_FALSE' + str(self._if_counter))
         # else. if false
         if self.get_token() == 'else':
@@ -470,6 +476,7 @@ class CompilationEngine:
             self.advance_tokenizer()
             self.compileStatements()
             self.advance_tokenizer()
+        self.vm_writer.writeLabel('IF_END' + str(self._if_counter))
         return
 
     def compileExpression(self):
@@ -534,7 +541,7 @@ class CompilationEngine:
             self.vm_writer.writeVM(UNARY_TABLE[unaryOp])
 
         else:
-            # term is subroutine | class | var
+            # term is subroutine | class | var | argument
             firstToken = self.get_token()
             self.advance_tokenizer()
 
