@@ -31,7 +31,6 @@ class SymbolTable:
         # erase all names in prev subroutine symbol table
         self._subroutine_symbols.clear()
         self._index_arg = 0
-        #TODO: handle index initialization when starting a new subroutine
         self._index_var = 0
         return
 
@@ -57,7 +56,6 @@ class SymbolTable:
         elif kind == VAR:
             self._subroutine_symbols[name] = [type, 'local', self._index_var]
             self._index_var += 1
-        # print(self._subroutine_symbols)
         return
 
     def varCount(self, kind):
@@ -95,7 +93,6 @@ class SymbolTable:
             return self._subroutine_symbols[name][S_TYPE]
         elif name in self._class_symbols:
             return self._class_symbols[name][S_TYPE]
-        # return None
 
     def indexOf(self, name):
         """
@@ -106,13 +103,3 @@ class SymbolTable:
             return self._subroutine_symbols[name][S_INDEX]
         elif name in self._class_symbols:
             return self._class_symbols[name][S_INDEX]
-        # return None
-
-    def is_declared(self, name):
-        """
-        Checks if a given object was already declared
-        :param name: The object to check
-        :return: True if the object is un-known to the symbol table, false otherwise
-        """
-        return (self._subroutine_symbols[name] is not None) or \
-                (self._class_symbols[name] is not None)
