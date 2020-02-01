@@ -1,0 +1,11 @@
+giladsid7,noa.levitzky
+gilad sid gilad.sid@mail.huji.ac.il 313328098, noa levitzky noa.levitzky@mail.huji.ac.il 205970783
+EX05
+
+files:
+Computer.hdl - Implementation of a computer HDL file
+CPU.hdl - Implementation of a CPU chip
+CpuMul.hdl - Implementation of the CpuMul chip
+ExtendAlu.hdl - Implementation of the ExtendAlu chip
+Memory.hdl - Implementation of the Memory chip
+

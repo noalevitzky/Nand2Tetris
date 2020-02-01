@@ -1,0 +1,73 @@
+/**
+* This chip is an extension of the book CPU by using the extended ALU.
+* More specificly if instruction[15]==0 or (instruction[14] and instruction[13] equals 1)
+* the CpuMul behave exactly as the book CPU.
+* While if it is C instruction and instruction[13] == 0 the output will be D*A/M 
+* (according to instruction[12]).
+* Moreover, if it is c instruction and instruction[14] == 0 it will behave as follows:
+*
+* instruction:  | 12 | 11 | 10 |
+* _____________________________
+* shift left D  | 0  | 1  | 1  |
+* shift left A  | 0  | 1  | 0  |
+* shift left M  | 1  | 1  | 0  |
+* shift right D | 0  | 0  | 1  |
+* shift right A | 0  | 0  | 0  |
+* shift right M | 1  | 0  | 0  |
+**/
+
+CHIP CpuMul{
+
+    IN  inM[16],         // M value input  (M = contents of RAM[A])
+        instruction[16], // Instruction for execution
+        reset;           // Signals whether to re-start the current
+                         // program (reset=1) or continue executing
+                         // the current program (reset=0).
+
+    OUT outM[16],        // M value output
+        writeM,          // Write into M? 
+        addressM[15],    // Address in data memory (of M)
+        pc[15];          // address of next instruction
+
+     PARTS:
+
+
+//initialization
+	And16(a=instruction, b=true, out[0] = o0, out[1] = o1, out[2] = o2, out[3] = o3, out[4] = o4, out[5] = o5, out[6] = o6, out[7] = o7, out[8] = o8,out[9] = o9,out[10] = o10,out[11] = o11,out[12] = o12,out[15] = o15,out[0..14]=add);
+	And(a=w2, b=o5, out=cmp1);
+	Mux16(a=instruction, b=outalu, sel=cmp1, out=a2);
+	Or(a=w1, b=cmp1, out=orw1);
+	ARegister( in = a2, load = orw1, out = aregout);
+	And(a=o4, b=w2, out=dload);
+	DRegister( in = outalu, load = dload, out = dregout);
+
+//according to init, get calculations from extended alu
+	DMux( in = true, sel = o15, a = w1, b = w2);
+	Mul(a=dregout, b=m1, out=outMul);
+	Mux16(a=aregout, b=inM, sel=o12, out=m1);
+	ExtendAlu(x=dregout, y=m1, instruction=instruction[6..14], out = outalu, zr = zr, ng = ng);
+
+//calc jump decisions
+	Not(in = zr, out = zrn);
+	Not( in = ng, out = ngn);
+	And(a=zrn, b=ngn, out=q1);
+	And(a=o2, b=ng, out=j1);
+	And(a=o1, b=zr, out=j2);
+	And(a=o0, b=q1, out=j3);
+	Or(a=j1, b=j2, out=j4);
+	Or(a=j4, b=j3, out=j5);
+	And(a=w2, b=j5, out=jfinal);
+
+//write to mem
+	And(a=o3, b=w2, out=writeM);
+
+//PC final
+	PC( in = aregout, load = jfinal, inc = true, reset = reset, out[0..14]=pc);
+
+//get outM
+	And16(a=outalu, b=true, out=outM);
+
+//get addresssM
+	And16(a=aregout, b=true, out[0..14]=addressM);
+}
+
