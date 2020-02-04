@@ -54,20 +54,20 @@ class Math {
      *  the Jack expressions x*y and multiply(x,y) return the same value.
      */
     function int multiply(int x, int y) {
-		var int counter, bitLenY, shiftedX, sum, i;
+	var int counter, bitLenY, shiftedX, sum, i;
         var boolean first;
-		var boolean negX, negY;
+	var boolean negX, negY;
         let shiftedX = x;
         let counter = 15;
         let bitLenY = 0;
         let sum = 0;
-		let i = 0;
+	let i = 0;
 		
-		let negX = (x<0);
-		let negY = (y<0);
+	let negX = (x<0);
+	let negY = (y<0);
 		
-		let x = Math.abs(x);
-		let y = Math.abs(y);
+	let x = Math.abs(x);
+	let y = Math.abs(y);
 		
         while ((i<16) & (shiftedX>0)){
             if (Math.bit(y,i)){
@@ -128,9 +128,9 @@ class Math {
 	}
 	
 	function boolean bit(int x, int j){
-		var boolean bol;
+	    var boolean bol;
 	    let bol = (~(x & TwoToThe[j] = 0));
-		return bol;
+	    return bol;
 	}
 
     /** Returns the integer part of the square root of x. */
@@ -139,14 +139,14 @@ class Math {
 	    var int max;
 	    var int min;
 	    var int mid;
-		var int i;
+	    var int i;
 	    var boolean end;
 	    let max = 182;
 	    let min = 0;
-		let i = 181;
+	    let i = 181;
 	    while (i>0){
-			let i = i-1;
-			let mid = Math.divide((max+min),2);
+		let i = i-1;
+		let mid = Math.divide((max+min),2);
 	        if ((Math.multiply(mid, mid)) = x){
 	            return mid;
 	        }
@@ -157,7 +157,7 @@ class Math {
 	            let max = mid;
 	        }
 			
-		}
+	    }
 		return mid;
     }
 
@@ -173,7 +173,7 @@ class Math {
     function int min(int a, int b) {
 	    if (a<b){
 	        return a;
-	        }
+	    }
 	    return b;
     }
 }
