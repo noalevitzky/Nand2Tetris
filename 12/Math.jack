@@ -1,0 +1,179 @@
+// This file is part of www.nand2tetris.org
+// and the book "The Elements of Computing Systems"
+// by Nisan and Schocken, MIT Press.
+// File name: projects/12/Math.jack
+
+/**
+ * A library of commonly used mathematical functions.
+ * Note: Jack compilers implement multiplication and division using OS method calls.
+ */
+class Math {
+
+	static Array TwoToThe;
+	static int divConst;
+	static int divIteration;
+	static in q;
+	
+    /** Initializes the library. */
+    function void init() {
+		let TwoToThe = Array.new(16);
+        let divConst = 0;
+        let divIteration = -1;
+        let TwoToThe[0] = 1;
+        let TwoToThe[1] = 2;
+        let TwoToThe[2] = 4;
+        let TwoToThe[3] = 8;
+        let TwoToThe[4] = 16;
+        let TwoToThe[5] = 32;
+        let TwoToThe[6] = 64;
+        let TwoToThe[7] = 128;
+        let TwoToThe[8] = 256;
+        let TwoToThe[9] = 512;
+        let TwoToThe[10] = 1024;
+        let TwoToThe[11] = 2048;
+        let TwoToThe[12] = 4096;
+        let TwoToThe[13] = 8192;
+        let TwoToThe[14] = 16384;
+        let TwoToThe[15] = -32767;
+		return;
+    }
+
+    /** Returns the absolute value of x. */
+    function int abs(int x) {
+	    if (~x<0){
+	        return x;
+		}
+		else{
+	    return -x;
+		}
+    }
+
+    /** Returns the product of x and y. 
+     *  When a Jack compiler detects the multiplication operator '*' in the 
+     *  program's code, it handles it by invoking this method. In other words,
+     *  the Jack expressions x*y and multiply(x,y) return the same value.
+     */
+    function int multiply(int x, int y) {
+		var int counter, bitLenY, shiftedX, sum, i;
+        var boolean first;
+		var boolean negX, negY;
+        let shiftedX = x;
+        let counter = 15;
+        let bitLenY = 0;
+        let sum = 0;
+		let i = 0;
+		
+		let negX = (x<0);
+		let negY = (y<0);
+		
+		let x = Math.abs(x);
+		let y = Math.abs(y);
+		
+        while ((i<16) & (shiftedX>0)){
+            if (Math.bit(y,i)){
+                // Get the length of the bit representation of number y
+                let sum = sum +shiftedX;
+                }
+			let shiftedX = shiftedX + shiftedX;
+            let i = i + 1;
+            }
+        if (negX = negY){
+			return (sum);
+		}
+		else{
+			return -sum;
+		}
+	}
+	
+
+    /** Returns the integer part of x/y.
+     *  When a Jack compiler detects the multiplication operator '/' in the 
+     *  program's code, it handles it by invoking this method. In other words,
+     *  the Jack expressions x/y and divide(x,y) return the same value.
+     */
+
+	function int divide(int x, int y) {
+		var boolean negX, negY;	
+		var int absX, absY, answer;
+		let divConst = 0;
+		let negX = (x<0);
+		let negY = (y<0);
+		let absX = Math.abs(x);
+		let absY = Math.abs(y);
+		let answer = Math.divideHelper(absX,absY);
+		// reset static variable
+		let divConst = 0;
+		if (negX = negY){
+			return answer;
+		}
+		return -answer;
+	}
+	
+	function int divideHelper(int x, int y){
+		var int q;
+		if (x<y){
+			return 0;
+		}
+		if (y<0){
+			return 0;
+		}
+		let q = Math.divideHelper(x, y+y);
+		if (x < (y + divConst)){
+			return (q+q);
+		}
+		else{
+			let divConst = divConst + y;
+			return (q+q+1);
+		}
+	}
+	
+	function boolean bit(int x, int j){
+		var boolean bol;
+	    let bol = (~(x & TwoToThe[j] = 0));
+		return bol;
+	}
+
+    /** Returns the integer part of the square root of x. */
+    function int sqrt(int x) {
+	    /* Perform a binary search over the min value (=0^2) and max value (=181^2) */
+	    var int max;
+	    var int min;
+	    var int mid;
+		var int i;
+	    var boolean end;
+	    let max = 182;
+	    let min = 0;
+		let i = 181;
+	    while (i>0){
+			let i = i-1;
+			let mid = Math.divide((max+min),2);
+	        if ((Math.multiply(mid, mid)) = x){
+	            return mid;
+	        }
+	        if ((Math.multiply(mid, mid)) < x){
+	            let min = mid;
+	        }
+	        if ((Math.multiply(mid,mid)) > x ){
+	            let max = mid;
+	        }
+			
+		}
+		return mid;
+    }
+
+    /** Returns the greater number. */
+    function int max(int a, int b) {
+	    if (a<b){
+	        return b;
+	    }
+	    return a;
+    }
+
+    /** Returns the smaller number. */
+    function int min(int a, int b) {
+	    if (a<b){
+	        return a;
+	        }
+	    return b;
+    }
+}
